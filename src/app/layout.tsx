@@ -8,6 +8,7 @@ export const metadata: Metadata = {
   title: 'Kaspar 2028',
   description:
     "A radical reimagining of Peter Handke's Kaspar at Residenztheater München — integrating AI into live performance.",
+  manifest: '/site.webmanifest',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -29,6 +30,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Display&family=Inter:wght@300;400;500;700&display=swap"
           rel="stylesheet"
         />
+
       </head>
       <body>{children}</body>
     </html>

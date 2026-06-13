@@ -80,11 +80,17 @@ export default function Teaser({ text }: { text: string }) {
         Composite.add(engine.world, mc);
 
         // Remove listeners that Matter.js adds and call preventDefault, blocking
-        // native scroll. Re-add touchmove as passive so it still fires (interaction
-        // works) but cannot block scroll.
-        const m = mouse as unknown as { mousewheel: EventListener; mousemove: EventListener };
+        // native scroll. touchstart must also be passive — if it calls preventDefault
+        // the browser cancels the entire touch sequence before touchmove even fires.
+        const m = mouse as unknown as {
+          mousewheel: EventListener;
+          mousemove: EventListener;
+          mousedown: EventListener;
+        };
         mouse.element.removeEventListener('mousewheel', m.mousewheel);
         mouse.element.removeEventListener('DOMMouseScroll', m.mousewheel);
+        mouse.element.removeEventListener('touchstart', m.mousedown);
+        mouse.element.addEventListener('touchstart', m.mousedown, { passive: true });
         mouse.element.removeEventListener('touchmove', m.mousemove);
         mouse.element.addEventListener('touchmove', m.mousemove, { passive: true });
 

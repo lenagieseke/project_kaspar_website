@@ -43,8 +43,7 @@ function ImpressumDE() {
       <section>
         <h2>Vertreten durch</h2>
         <p>
-          Prof. Dr. Susanne Stürmer (Präsidentin)<br />
-          Prof. Dr. Klemens Koehler (Kanzler)
+          XX<br />
         </p>
       </section>
 
@@ -58,17 +57,14 @@ function ImpressumDE() {
       <section>
         <h2>Projektverantwortliche</h2>
         <p>
-          Kaspar 2028 ist ein Forschungsprojekt an der Filmuniversität Babelsberg KONRAD WOLF
-          in Zusammenarbeit mit dem Residenztheater München.
+          XX
         </p>
       </section>
 
       <section>
         <h2>Haftungsausschluss</h2>
         <p>
-          Trotz sorgfältiger inhaltlicher Kontrolle übernehmen wir keine Haftung für die
-          Inhalte externer Links. Für den Inhalt der verlinkten Seiten sind ausschließlich
-          deren Betreiber verantwortlich.
+          XX
         </p>
       </section>
     </>
@@ -91,8 +87,7 @@ function ImpressumEN() {
       <section>
         <h2>Represented by</h2>
         <p>
-          Prof. Dr. Susanne Stürmer (President)<br />
-          Prof. Dr. Klemens Koehler (Chancellor)
+XX
         </p>
       </section>
 
@@ -106,16 +101,14 @@ function ImpressumEN() {
       <section>
         <h2>Project</h2>
         <p>
-          Kaspar 2028 is a research project at Filmuniversität Babelsberg KONRAD WOLF
-          in collaboration with Residenztheater München.
+XX
         </p>
       </section>
 
       <section>
         <h2>Disclaimer</h2>
         <p>
-          Despite careful content review we assume no liability for the content of external
-          links. The operators of linked pages are solely responsible for their content.
+XX
         </p>
       </section>
     </>

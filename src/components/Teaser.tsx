@@ -79,20 +79,13 @@ export default function Teaser({ text }: { text: string }) {
         });
         Composite.add(engine.world, mc);
 
-        // Remove listeners that Matter.js adds and call preventDefault, blocking
-        // native scroll. touchstart must also be passive — if it calls preventDefault
-        // the browser cancels the entire touch sequence before touchmove even fires.
-        const m = mouse as unknown as {
-          mousewheel: EventListener;
-          mousemove: EventListener;
-          mousedown: EventListener;
-        };
+        // Remove wheel listeners Matter.js adds (they call preventDefault and block
+        // wheel-based page scroll). Touch drag is left as-is — touch-action: pan-y
+        // on the canvas CSS tells the browser to handle vertical pan natively even
+        // when JS calls preventDefault, so scroll and drag coexist on iOS 13+.
+        const m = mouse as unknown as { mousewheel: EventListener };
         mouse.element.removeEventListener('mousewheel', m.mousewheel);
         mouse.element.removeEventListener('DOMMouseScroll', m.mousewheel);
-        mouse.element.removeEventListener('touchstart', m.mousedown);
-        mouse.element.addEventListener('touchstart', m.mousedown, { passive: true });
-        mouse.element.removeEventListener('touchmove', m.mousemove);
-        mouse.element.addEventListener('touchmove', m.mousemove, { passive: true });
 
         const words = text.split(/\s+/).filter((w) => w.length > 0);
 
@@ -233,13 +226,22 @@ export default function Teaser({ text }: { text: string }) {
       };
     }
 
+    let lastW = canvas.offsetWidth;
+
     function handleResize() {
+      const cvs = canvasRef.current;
+      if (!cvs) return;
+      const newW = cvs.offsetWidth;
+      // Ignore height-only changes — iOS fires resize as the toolbar shows/hides
+      // during scroll, which would blank the canvas on every scroll gesture.
+      if (Math.abs(newW - lastW) < 5) return;
+      lastW = newW;
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(() => {
-        const cvs = canvasRef.current;
-        if (!cvs) return;
+        const c = canvasRef.current;
+        if (!c) return;
         currentCleanup?.();
-        currentCleanup = start(cvs);
+        currentCleanup = start(c);
       }, 150);
     }
 

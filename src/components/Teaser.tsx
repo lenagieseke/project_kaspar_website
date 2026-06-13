@@ -24,7 +24,7 @@ export default function Teaser({ text }: { text: string }) {
     let currentCleanup: (() => void) | null = null;
     let resizeTimer: ReturnType<typeof setTimeout>;
 
-    function start() {
+    function start(canvas: HTMLCanvasElement) {
       let animationId = 0;
       // `stopped` is checked inside the async import callback and before starting
       // the animation loop. React StrictMode calls useEffect twice in development
@@ -230,13 +230,15 @@ export default function Teaser({ text }: { text: string }) {
     function handleResize() {
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(() => {
+        const cvs = canvasRef.current;
+        if (!cvs) return;
         currentCleanup?.();
-        currentCleanup = start();
+        currentCleanup = start(cvs);
       }, 150);
     }
 
     window.addEventListener('resize', handleResize);
-    currentCleanup = start();
+    currentCleanup = start(canvas);
 
     return () => {
       currentCleanup?.();

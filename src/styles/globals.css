@@ -1,0 +1,514 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Why plain CSS instead of Tailwind utility classes?
+ *
+ * The layout depends heavily on CSS features that don't map cleanly to
+ * utility classes: nth-of-type selectors on .project-wrapper headings
+ * (alternating left/right alignment), a 10-column grid where child elements
+ * reference named column spans, and position:fixed with gradient fades.
+ * Encoding all of that as className strings would make the templates harder
+ * to read than just keeping the CSS here. Tailwind is still available in
+ * components for one-off spacing or utility needs.
+ *
+ * Core layout primitive: a 10-column CSS grid at max-width 1440px.
+ * All page sections (nav, content, footer) place themselves into this grid
+ * via grid-column values rather than nested wrappers.
+ */
+
+/* ---- Global Styles ---- */
+
+body {
+  font-family: "Inter", sans-serif;
+  margin: 0;
+  padding: 0;
+  line-height: 1.6;
+  color: #000;
+  background-color: #fff;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+h1, h2, h3 {
+  font-family: "Libre Caslon Display", serif;
+}
+
+a {
+  text-decoration: none;
+}
+
+/* ---- Header & Navigation ---- */
+
+.site-header {
+  width: 100%;
+  position: fixed;
+  z-index: 1000;
+  background: linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,255,255,0) 100%);
+}
+
+.site-header .logo a {
+  font-size: 1.5rem;
+  font-weight: bold;
+  text-decoration: none;
+  color: #000;
+}
+
+.site-header .logo a:hover {
+  color: #ccc;
+}
+
+.main-navigation {
+  max-width: 1440px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  height: 100px;
+  align-items: center;
+}
+
+.logo {
+  grid-column: 2 / 5;
+}
+
+.nav-list {
+  grid-column: 5 / 10;
+  display: flex;
+  justify-content: flex-end;
+  gap: 2rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.nav-list li {
+  text-align: right;
+}
+
+.nav-list a {
+  text-decoration: none;
+  color: #000;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+
+.lang-switcher {
+  display: flex;
+  gap: 0.25rem;
+  align-items: center;
+  margin-left: 1rem;
+  border-left: 1px solid #ccc;
+  padding-left: 1.5rem;
+}
+
+.lang-switcher .lang-link {
+  font-size: 0.8rem;
+  color: #000;
+  font-weight: 400;
+}
+
+.lang-switcher .lang-link.lang-active {
+  color: #000;
+  font-weight: 900;
+}
+
+.nav-list a:hover,
+.nav-list li.active a {
+  color: #ccc;
+}
+
+/* ---- Page title (non-home pages) ---- */
+
+.page-title-header {
+  width: 100%;
+  padding-top: 100px;
+  padding-right: 10%;
+  box-sizing: border-box;
+  text-align: right;
+}
+
+.page-title {
+  font-size: clamp(3rem, 10vw, 9rem);
+  margin: 0;
+  line-height: 1;
+}
+
+/* ---- Main Content Layout ---- */
+
+#main-content {
+  flex: 1;
+  max-width: 1440px;
+  margin: 0 auto;
+  width: 100%;
+  padding-top: 0;
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+}
+
+/* Home page: add breathing room between the teaser and the description.
+ * Other pages get this space from .page-title-header; the home page needs it explicitly. */
+#main-content.home-content {
+  padding-top: 1rem;
+}
+
+#main-content > * {
+  margin-bottom: 3rem;
+  grid-column: 2 / -2;
+}
+
+#main-content > *.smaller {
+  grid-column: 3 / -3;
+}
+
+#main-content > * img,
+#main-content > * video {
+  width: 100%;
+}
+
+/* ---- Project Page Layout ---- */
+
+/* project-wrapper is a nested 10-column grid that spans the full page width.
+ * Headings sit one column in from each edge (columns 2–9); body paragraphs
+ * are indented further (columns 4–8). Odd/even nth-of-type rules create the
+ * alternating left/right visual rhythm without any JS. */
+
+.project-wrapper {
+  grid-column: 1 / -1 !important;
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+}
+
+.project-wrapper h1 {
+  font-size: clamp(2.5rem, 6vw, 6rem);
+  grid-column: 2 / -2;
+  margin: 0;
+}
+
+.project-wrapper h1:nth-of-type(2n) {
+  text-align: right;
+}
+
+/* Direct <p> children (home page description) */
+.project-wrapper > p {
+  grid-column: 4 / -3;
+}
+
+.project-wrapper > p:nth-of-type(2n) {
+  grid-column: 3 / -4;
+}
+
+/* Portable Text wrapper — gives rich text sections the same column placement */
+.project-wrapper .portable-text {
+  grid-column: 4 / -3;
+}
+
+.project-wrapper .portable-text:nth-of-type(2n) {
+  grid-column: 3 / -4;
+}
+
+/* Basic typography inside Portable Text */
+.portable-text p        { margin: 0 0 1em; }
+.portable-text p:last-child { margin-bottom: 0; }
+.portable-text ul,
+.portable-text ol       { padding-left: 1.5em; margin: 0 0 1em; }
+.portable-text li       { margin-bottom: 0.25em; }
+.portable-text strong   { font-weight: 700; }
+.portable-text em       { font-style: italic; }
+
+/* ---- Home page teaser ---- */
+
+#teaser {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background-color: #fff;
+}
+
+#teaser-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+/* ---- News ---- */
+
+.date {
+  font-size: 0.85rem;
+  color: #555;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+/* 10-column grid matching the content pages. Odd cards sit left of centre
+ * (cols 2–5), even cards right of centre (cols 5–8). They share column 5,
+ * so the browser stacks them vertically instead of placing them side-by-side —
+ * giving the same alternating left/right rhythm as The Project page.
+ * align-items: start lets the per-card translateY offsets show through. */
+.news-grid {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  row-gap: 0;
+  align-items: start;
+  grid-column: 1 / -1 !important;
+  padding-top: 4rem;
+}
+
+.news-card {
+  display: flex;
+  flex-direction: column;
+  /* margin-bottom: -3rem; */
+}
+
+/* Three equally-spaced columns, each 3 grid columns wide.
+ * Col 1 starts 1 col from the left edge; col 3 runs to the right edge. */
+.news-card:nth-child(3n+1) { grid-column: 2 / 5; }
+.news-card:nth-child(3n+2) { grid-column: 5 / 8; }
+.news-card:nth-child(3n)   { grid-column: 8 / -1; }
+
+/* Stretch the link to fill the card so the whole card is clickable, while
+ * keeping the internal layout as a flex column. */
+.news-card-link {
+  display: flex;
+  flex-direction: column;
+  color: inherit;
+}
+
+.news-card-link:hover .news-card-title {
+  color: #ccc;
+}
+
+.news-card-category {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #888;
+  margin-bottom: 0.5rem;
+}
+
+.news-card-title {
+  font-family: "Libre Caslon Display", serif;
+  font-size: clamp(1.4rem, 2.5vw, 2.2rem);
+  line-height: 1.1;
+  margin: 0 0 0.6rem;
+  transition: color 0.2s;
+}
+
+.news-card-excerpt {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: #333;
+  margin: 0;
+}
+
+/* ---- Footer ---- */
+
+.site-footer {
+  width: 100%;
+  background: linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,1) 100%);
+}
+
+.main-footer {
+  max-width: 1440px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  height: 100px;
+  align-items: center;
+}
+
+.footer-copyright {
+  grid-column: 2 / 7;
+}
+
+.footer-nav {
+  grid-column: 7 / 10;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+.footer-link {
+  color: #000;
+  font-weight: 400;
+  transition: color 0.2s;
+}
+
+.footer-link:hover {
+  color: #ccc;
+}
+
+/* ---- News / Article body ---- */
+
+/* Single-column article layout. Sits in the #main-content grid at the
+ * standard 2/-2 inset (inherited from #main-content > *). */
+.article-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  max-width: 720px;
+  padding-top: 3rem;
+}
+
+/* ---- Impressum page ---- */
+
+/* Simpler, readable layout — no alternating rhythm, just clean sections.
+ * Sits in the #main-content grid at the standard 2/-2 column inset. */
+.impressum-wrapper {
+  grid-column: 2 / -2;
+  display: flex;
+  flex-direction: column;
+  gap: 2.5rem;
+  max-width: 640px;
+}
+
+.impressum-wrapper h2 {
+  font-family: "Libre Caslon Display", serif;
+  font-size: clamp(1.2rem, 2vw, 1.6rem);
+  margin: 0 0 0.5rem;
+}
+
+.impressum-wrapper p {
+  margin: 0;
+  line-height: 1.7;
+}
+
+.impressum-wrapper a {
+  color: #000;
+  border-bottom: 1px solid #ccc;
+}
+
+.impressum-wrapper a:hover {
+  color: #ccc;
+}
+
+/* ---- Hamburger button (hidden on desktop) ---- */
+
+.nav-toggle {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  z-index: 1001;
+  position: relative;
+}
+
+.nav-toggle span {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background-color: #000;
+  transition: transform 0.25s, opacity 0.25s;
+}
+
+.nav-toggle.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.nav-toggle.open span:nth-child(2) { opacity: 0; }
+.nav-toggle.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+/* ---- Responsive ---- */
+
+@media (max-width: 768px) {
+  .main-navigation {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 1.5rem;
+    max-width: 100%;
+    height: 70px;
+  }
+
+  .nav-toggle {
+    display: flex;
+  }
+
+  .nav-list {
+    position: fixed;
+    top: 56px;
+    right: 1.5rem;
+    background: #fff;
+    flex-direction: column;
+    align-items: flex-end;
+    justify-content: flex-start;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    font-size: 1rem;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+    z-index: 1000;
+    grid-column: unset;
+  }
+
+  .nav-list.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .page-title-header {
+    padding-top: 70px;
+    padding-right: 1.5rem;
+  }
+
+  #main-content > * {
+    grid-column: 1 / -1;
+    padding: 0 1.5rem;
+  }
+
+  .project-wrapper h1 {
+    grid-column: 1 / -1;
+    padding: 0 1.5rem;
+  }
+
+  .project-wrapper > p,
+  .project-wrapper > p:nth-of-type(2n),
+  .project-wrapper .portable-text,
+  .project-wrapper .portable-text:nth-of-type(2n) {
+    grid-column: 1 / -1;
+    padding: 0 1.5rem;
+  }
+
+  /* Single column on mobile; reset column placement and translateY offsets. */
+  .news-grid {
+    grid-template-columns: 1fr;
+    row-gap: 3rem;
+    padding: 6rem 1.5rem 0;
+  }
+
+  .news-card,
+  .news-card:nth-child(3n+1),
+  .news-card:nth-child(3n+2),
+  .news-card:nth-child(3n) {
+    grid-column: 1 / -1;
+    transform: none !important;
+  }
+
+  .main-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1.5rem;
+    height: 70px;
+  }
+
+  .footer-nav {
+    grid-column: unset;
+  }
+
+  .impressum-wrapper {
+    grid-column: 1 / -1;
+    padding: 0 1.5rem;
+  }
+
+  .footer-copyright {
+    grid-column: unset;
+  }
+}

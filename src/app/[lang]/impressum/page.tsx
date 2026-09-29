@@ -40,7 +40,7 @@ function ImpressumDE() {
 
       <section>
         <h2>Vertreten durch</h2>
-        <p>XX</p>
+        <p>Prof. Dr. Lena Gieseke</p>
       </section>
 
       <section>
@@ -78,7 +78,7 @@ function ImpressumEN() {
 
       <section>
         <h2>Represented by</h2>
-        <p>XX</p>
+        <p>Prof. Dr. Lena Gieseke</p>
       </section>
 
       <section>

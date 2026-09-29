@@ -365,7 +365,7 @@ a {
   background: #f2f2f2; /* visible while the photo loads */
 }
 
-/* Shown instead of the photo while none is uploaded (TeamPage in
+/* Shown instead of the photo while none is uploaded (MemberCard in
  * team/page.tsx). Takes its size from .team-photo. */
 .team-photo-placeholder {
   display: flex;

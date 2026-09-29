@@ -13,7 +13,11 @@ export const institution = defineType({
       name: 'logo',
       title: 'Logo',
       type: 'image',
-      description: 'Optional. Shown above the name at the full width of the card. Ideally a dark logo on a transparent background (PNG or SVG).',
+      description:
+        'Optional. Shown above the name at the full width of the card (about 800px wide on high-resolution screens), so upload it at least that wide. PNG with a transparent background works best.',
+      // No SVG: next/image doesn't process SVGs, so they would be loaded
+      // straight from Sanity's CDN instead of this site (see lib/image.ts).
+      options: { accept: 'image/png, image/jpeg, image/webp' },
     }),
     defineField({ name: 'description_en', title: 'Description (EN)', type: 'text', rows: 4 }),
     defineField({ name: 'description_de', title: 'Description (DE)', type: 'text', rows: 4 }),

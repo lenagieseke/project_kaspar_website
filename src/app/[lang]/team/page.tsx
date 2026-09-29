@@ -13,7 +13,10 @@ type Props = { params: Promise<{ lang: string }> };
 const INSTITUTIONS_TITLE = { en: 'Institutions', de: 'Institutionen' };
 
 // Photos are shown at 4:5 (portrait), cropped around the hotspot set in Sanity.
+// PHOTO_WIDTH is the source size fetched from Sanity; next/image scales it
+// down per screen.
 const PHOTO_ASPECT = 4 / 5;
+const PHOTO_WIDTH = 1200;
 
 // Tells the browser how wide the image is on screen, so next/image can pick a
 // suitable size: full width on phones, about a third of the page otherwise.
@@ -56,15 +59,14 @@ export default async function TeamPage({ params }: Props) {
 
 function MemberCard({ member }: { member: TeamMember }) {
   const { photo } = member;
-  const photoWidth = 1200;
   return (
     <>
       {photo ? (
         <Image
-          src={croppedImageUrl(photo, PHOTO_ASPECT, photoWidth)}
+          src={croppedImageUrl(photo, PHOTO_ASPECT, PHOTO_WIDTH)}
           alt={photo.alt}
-          width={photoWidth}
-          height={Math.round(photoWidth / PHOTO_ASPECT)}
+          width={PHOTO_WIDTH}
+          height={Math.round(PHOTO_WIDTH / PHOTO_ASPECT)}
           sizes={CARD_IMAGE_SIZES}
           placeholder={photo.lqip ? 'blur' : 'empty'}
           blurDataURL={photo.lqip}
@@ -90,11 +92,13 @@ function InstitutionCard({ institution }: { institution: Institution }) {
   const { logo } = institution;
   return (
     <>
-      {/* Full card width, like the text below it (.institution-logo). */}
+      {/* Full card width, like the text below it (.institution-logo).
+          Empty alt: the logo shows the name, which follows as the heading,
+          so screen readers would otherwise read it twice. */}
       {logo && (
         <Image
-          src={imageUrl(logo, 1200)}
-          alt={logo.alt}
+          src={imageUrl(logo)}
+          alt=""
           width={logo.width}
           height={logo.height}
           sizes={CARD_IMAGE_SIZES}

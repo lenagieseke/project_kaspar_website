@@ -14,7 +14,7 @@ export function croppedImageUrl(image: Image, aspect: number, width = 1200): str
   return builder.image(image.source).width(width).height(Math.round(width / aspect)).fit('crop').url();
 }
 
-// Uncropped (e.g. logos), limited to the given width.
-export function imageUrl(image: Image, width = 800): string {
+// Uncropped (e.g. logos), limited to the given width (never enlarged).
+export function imageUrl(image: Image, width = 1200): string {
   return builder.image(image.source).width(width).fit('max').url();
 }

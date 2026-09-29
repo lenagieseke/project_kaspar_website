@@ -50,7 +50,9 @@ src/
 ├── sanity/
 │   ├── env.ts                  # reads + checks the NEXT_PUBLIC_SANITY_* variables
 │   ├── sanity.config.ts        # Studio config + sidebar structure
-│   └── schemas/                # siteSettings, contentPage, newsPost, teamMember, institution
+│   ├── socialPlatforms.ts      # platforms offered for "Social media" links
+│   └── schemas/                # siteSettings, contentPage, newsPost, teamMember, institution;
+│                               #   links.ts: Links/Social media fields shared by both
 └── styles/globals.css          # most of the styling
 public/                         # favicons, web manifest
 docs/sanity-integration.md      # step-by-step guide to how Sanity was set up
@@ -119,7 +121,7 @@ Editor ──► /studio (Sanity Studio, embedded)
 | `contentPage`  | The Project, K.ai                                  | `pageId` + a list of `sections` (`heading_*`, `body_*` as Portable Text)        |
 | `newsPost`     | News & Writings                                    | `slug`, `title_*`, `date`, `category` (news/article/tutorial), `tags`, `body_*` |
 | `teamMember`   | Team page, one card each                           | `name`, `role_*` (short title), `projectRole_*` (role in the project), `photo` (with focal point), `bio_*` (60–100 words, warns otherwise), `links`, `socials`, `order` |
-| `institution`  | Team page, "Institutions" section                  | `name`, `logo`, `description_*`, `url`, `order` |
+| `institution`  | Team page, "Institutions" section                  | `name`, `logo` (PNG/JPEG/WebP), `description_*`, `links`, `socials`, `order` |
 
 The Studio's sidebar (Site Settings pinned at the top, then pages and posts) is defined in `src/sanity/sanity.config.ts`.
 

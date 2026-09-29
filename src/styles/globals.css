@@ -140,6 +140,25 @@ a {
   line-height: 1;
 }
 
+/* Second page-sized title inside <main> ("Privacy Policy" on the imprint
+ * page). It breaks out of the 1440px content grid to the full window width,
+ * so it lines up on the right with the page title at the top.
+ * (#main-content in the selector so it beats "#main-content > *".) */
+#main-content > .privacy-title-header {
+  grid-column: 1 / -1;
+  width: auto;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  padding-right: 10vw;
+}
+
+/* 100vw includes a visible scrollbar (Windows, some Linux setups), so the
+ * full-width title above would stick out by half its width on each side and
+ * cause a horizontal scrollbar. clip cuts that off without affecting layout. */
+body {
+  overflow-x: clip;
+}
+
 /* ---- Main Content Layout ---- */
 
 #main-content {
@@ -432,14 +451,17 @@ a {
   grid-template-columns: repeat(10, 1fr);
   height: 100px;
   align-items: center;
+  font-size: 0.8rem;
+  color: #666;
 }
 
 .footer-copyright {
-  grid-column: 2 / 7;
+  grid-column: 2 / 10;
+  text-align: center;
 }
 
 .footer-link {
-  color: #000;
+  color: inherit;
   font-weight: 400;
   transition: color 0.2s;
 }
@@ -483,6 +505,10 @@ a {
   line-height: 1.7;
 }
 
+.impressum-wrapper p + p {
+  margin-top: 0.75rem;
+}
+
 .impressum-wrapper a {
   color: #000;
   border-bottom: 1px solid #ccc;
@@ -490,6 +516,15 @@ a {
 
 .impressum-wrapper a:hover {
   color: #ccc;
+}
+
+/* Email address as an image (impressum/page.tsx). The #main-content prefix
+ * beats the full-width rule for images in the main content, so the image
+ * keeps the width/height set in the component. */
+#main-content .impressum-email {
+  display: block;
+  width: auto;
+  height: auto;
 }
 
 /* ---- Back-to-top arrow (BackToTop.tsx) ---- */
@@ -592,7 +627,8 @@ a {
     pointer-events: auto;
   }
 
-  .page-title-header {
+  .page-title-header,
+  #main-content > .privacy-title-header {
     padding-top: 70px;
     padding-right: 1.5rem;
   }
@@ -651,7 +687,7 @@ a {
   .main-footer {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
     padding: 0 1.5rem;
     height: 70px;
   }

@@ -34,6 +34,7 @@ src/
 │   │   ├── team/               # team members + institutions
 │   │   ├── news/               # post list + news/[slug] detail page
 │   │   └── impressum/          # imprint (hardcoded, not in Sanity)
+│   ├── robots.ts               # /robots.txt: blocks AI crawlers, hides /studio
 │   └── studio/
 │       ├── layout.tsx          # separate root layout for the Studio (no site CSS/chrome)
 │       └── [[...tool]]/        # embedded Sanity Studio

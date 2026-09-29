@@ -89,10 +89,12 @@ export default async function LangLayout({ children, params }: Props) {
             <span className="footer-copyright">
               &copy; {new Date().getFullYear()} Kaspar 2028 |
               <Link href={`/${locale}/impressum`} className="footer-link">
-                {locale === 'de' ? ' Impressum' : ' Imprint'}
-              </Link>
+                {locale === 'de' ? ' Impressum & Datenschutz' : ' Imprint & Privacy'}
+              </Link> | 
+              {locale === 'de'
+                ? ' Scraping oder Nutzung für KI-Training untersagt.'
+                : ' Scraping or use in AI training prohibited.'}
             </span>
-
           </div>
         </footer>
 

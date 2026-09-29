@@ -30,6 +30,10 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  /* svh = screen height with mobile toolbars shown. Unlike dvh it doesn't
+   * change while scrolling, so the layout (and the teaser's obstacles) stay put. */
+  min-height: 100svh;
+  position: relative; /* containing block for the home page #teaser */
 }
 
 h1, h2, h3 {
@@ -147,10 +151,26 @@ a {
   grid-template-columns: repeat(10, 1fr);
 }
 
-/* Home page: add breathing room between the teaser and the description.
- * Other pages get this space from .page-title-header; the home page needs it explicitly. */
+/* Home page: on desktop it fits one screen. The teaser is a background layer
+ * (see #teaser); this <main> fills the space between the fixed header and the
+ * footer (flex: 1 from #main-content) and pushes the description to the bottom.
+ * On phones the description starts lower and the page scrolls (see Responsive).
+ * pointer-events: none lets clicks and drags reach the teaser canvas behind
+ * the empty part of <main>; the description itself stays selectable. */
 #main-content.home-content {
-  padding-top: 1rem;
+  position: relative;
+  z-index: 1;
+  padding-top: 100px; /* height of the fixed header */
+  align-content: end;
+  pointer-events: none;
+}
+
+.home-description {
+  pointer-events: auto;
+  margin: 0;
+  /* Show line breaks typed in the Sanity text field (HTML collapses them to
+   * spaces otherwise). Repeated spaces are still collapsed. */
+  white-space: pre-line;
 }
 
 #main-content > * {
@@ -219,10 +239,13 @@ a {
 
 /* ---- Home page teaser ---- */
 
+/* Background layer covering the whole page (not just the screen), so it
+ * scrolls together with the description and footer. Those sit on top of it
+ * (z-index 1) and act as obstacles in the physics world. */
 #teaser {
-  position: relative;
-  width: 100vw;
-  height: 100dvh;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
   overflow: hidden;
   background-color: #fff;
 }
@@ -310,6 +333,8 @@ a {
 /* ---- Footer ---- */
 
 .site-footer {
+  position: relative;
+  z-index: 1; /* above the home page teaser */
   width: 100%;
   background: linear-gradient(180deg, rgba(255,255,255,0) 0%, rgba(255,255,255,1) 100%);
 }
@@ -456,6 +481,18 @@ a {
   .page-title-header {
     padding-top: 70px;
     padding-right: 1.5rem;
+  }
+
+  /* Phones: the description starts 70% down the screen, so its top is visible
+   * below the falling text and the rest (plus footer) is reached by scrolling. */
+  #main-content.home-content {
+    padding-top: 70svh;
+    align-content: start;
+  }
+
+  .home-description {
+    font-size: 0.875rem;
+    line-height: 1.5;
   }
 
   #main-content > * {

@@ -49,7 +49,7 @@ export default function Teaser({ text }: { text: string }) {
       import('matter-js').then((Matter) => {
         if (stopped) return;
 
-        const { Engine, Bodies, Composite, Runner, Mouse, MouseConstraint } = Matter;
+        const { Engine, Bodies, Composite, Runner, Mouse, MouseConstraint, Query } = Matter;
 
         const engine = Engine.create({ gravity: { y: 1.2 } });
         const WALL = 100;
@@ -62,10 +62,6 @@ export default function Teaser({ text }: { text: string }) {
 
         const runner = Runner.create();
         Runner.run(runner, engine);
-        stopPhysics = () => {
-          Runner.stop(runner);
-          Engine.clear(engine);
-        };
 
         // mouse.pixelRatio corrects Matter.js's auto-detected scale, which would
         // otherwise multiply coordinates by dpr, misaligning pointer events with
@@ -79,13 +75,54 @@ export default function Teaser({ text }: { text: string }) {
         });
         Composite.add(engine.world, mc);
 
-        // Remove wheel listeners Matter.js adds (they call preventDefault and block
-        // wheel-based page scroll). Touch drag is left as-is — touch-action: pan-y
-        // on the canvas CSS tells the browser to handle vertical pan natively even
-        // when JS calls preventDefault, so scroll and drag coexist on iOS 13+.
-        const m = mouse as unknown as { mousewheel: EventListener };
-        mouse.element.removeEventListener('mousewheel', m.mousewheel);
-        mouse.element.removeEventListener('DOMMouseScroll', m.mousewheel);
+        // Matter.js's own listeners call preventDefault on every wheel and touch
+        // event, which blocks page scrolling wherever the canvas is. Replace them:
+        // - wheel: removed entirely, so the wheel always scrolls the page.
+        // - touch: a touch that starts on a falling piece drags it (and blocks
+        //   scrolling for that gesture); a touch on empty space scrolls the page.
+        const m = mouse as unknown as Record<'mousemove' | 'mousedown' | 'mouseup' | 'mousewheel', EventListener>;
+        canvas.removeEventListener('mousewheel', m.mousewheel);
+        canvas.removeEventListener('DOMMouseScroll', m.mousewheel);
+        canvas.removeEventListener('touchstart', m.mousedown);
+        canvas.removeEventListener('touchmove', m.mousemove);
+        canvas.removeEventListener('touchend', m.mouseup);
+
+        let touchDragging = false;
+        const onTouchStart = (e: TouchEvent) => {
+          const rect = canvas.getBoundingClientRect();
+          const t = e.changedTouches[0];
+          const point = { x: t.clientX - rect.left, y: t.clientY - rect.top };
+          const pieces = Composite.allBodies(engine.world).filter((b) => !b.isStatic);
+          touchDragging = Query.point(pieces, point).length > 0;
+          if (touchDragging) m.mousedown(e); // calls preventDefault → no scroll
+        };
+        const onTouchMove = (e: TouchEvent) => {
+          if (touchDragging) m.mousemove(e);
+        };
+        const onTouchEnd = (e: TouchEvent) => {
+          if (touchDragging) m.mouseup(e);
+          touchDragging = false;
+        };
+        const touchOpts = { passive: false } as const;
+        canvas.addEventListener('touchstart', onTouchStart, touchOpts);
+        canvas.addEventListener('touchmove', onTouchMove, touchOpts);
+        canvas.addEventListener('touchend', onTouchEnd);
+        canvas.addEventListener('touchcancel', onTouchEnd);
+
+        // The canvas element survives restarts (e.g. on resize), so every
+        // listener added here must be removed again, or old instances keep
+        // reacting to input.
+        stopPhysics = () => {
+          Runner.stop(runner);
+          Engine.clear(engine);
+          canvas.removeEventListener('mousemove', m.mousemove);
+          canvas.removeEventListener('mousedown', m.mousedown);
+          canvas.removeEventListener('mouseup', m.mouseup);
+          canvas.removeEventListener('touchstart', onTouchStart);
+          canvas.removeEventListener('touchmove', onTouchMove);
+          canvas.removeEventListener('touchend', onTouchEnd);
+          canvas.removeEventListener('touchcancel', onTouchEnd);
+        };
 
         const words = text.split(/\s+/).filter((w) => w.length > 0);
 
@@ -106,21 +143,27 @@ export default function Teaser({ text }: { text: string }) {
           return { text: words.slice(i, i + 10 + Math.floor(Math.random() * 11)).join(' '), type: 'long' };
         }
 
+        // Sizes below are fractions of the screen width, which makes text on
+        // phones tiny (a 'long' piece would be ~5px at 390px wide). On narrow
+        // screens (same breakpoint as the CSS) everything is scaled up; wrap
+        // widths are scaled too so pieces keep their proportions.
+        const SIZE_SCALE = W <= 768 ? 1.8 : 1;
+
         function randomFontSize(type: PieceType): number {
           switch (type) {
-            case 'word':     return Math.floor(W * (0.025 + Math.random() * 0.05));   // ~2.5–7.5vw
-            case 'phrase':   return Math.floor(W * (0.02  + Math.random() * 0.015));  // ~2.0–3.5vw
-            case 'fragment': return Math.floor(W * (0.015 + Math.random() * 0.01));   // ~1.5–2.5vw
-            case 'long':     return Math.floor(W * (0.01  + Math.random() * 0.005));  // ~1.0–1.5vw
+            case 'word':     return Math.floor(SIZE_SCALE * W * (0.025 + Math.random() * 0.05));   // ~2.5–7.5vw
+            case 'phrase':   return Math.floor(SIZE_SCALE * W * (0.02  + Math.random() * 0.015));  // ~2.0–3.5vw
+            case 'fragment': return Math.floor(SIZE_SCALE * W * (0.015 + Math.random() * 0.01));   // ~1.5–2.5vw
+            case 'long':     return Math.floor(SIZE_SCALE * W * (0.01  + Math.random() * 0.005));  // ~1.0–1.5vw
           }
         }
 
         function randomMaxWidth(type: PieceType): number | null {
           switch (type) {
             case 'word':     return null;
-            case 'phrase':   return Math.floor(W * (0.1 + Math.random() * 0.1));
-            case 'fragment': return Math.floor(W * (0.15 + Math.random() * 0.1));
-            case 'long':     return Math.floor(W * (0.2  + Math.random() * 0.2));
+            case 'phrase':   return Math.floor(SIZE_SCALE * W * (0.1 + Math.random() * 0.1));
+            case 'fragment': return Math.floor(SIZE_SCALE * W * (0.15 + Math.random() * 0.1));
+            case 'long':     return Math.floor(SIZE_SCALE * W * (0.2  + Math.random() * 0.2));
           }
         }
 
@@ -160,7 +203,8 @@ export default function Teaser({ text }: { text: string }) {
           ctx.restore();
 
           const bh = lines.length * lh + 2;
-          const x = WALL + Math.random() * (W - WALL * 2);
+          // Spawn fully inside the side walls, whatever the piece's width.
+          const x = bw / 2 + Math.random() * Math.max(0, W - bw);
           const y = -bh / 2 - 5;
 
           const body = Bodies.rectangle(x, y, bw, bh, {
@@ -174,7 +218,7 @@ export default function Teaser({ text }: { text: string }) {
           Composite.add(engine.world, body);
         }
 
-        const SPAWN_INTERVAL = 700;
+        const SPAWN_INTERVAL = 1400; // ms between new pieces
         let lastSpawn = -SPAWN_INTERVAL;
 
         function draw(timestamp: number) {
@@ -214,9 +258,33 @@ export default function Teaser({ text }: { text: string }) {
           }
         }
 
-        document.fonts.ready.then(() => {
-          if (!stopped) animationId = requestAnimationFrame(draw);
-        });
+        // Page elements marked with data-teaser-obstacle (the description box
+        // and the footer) become invisible static bodies at their on-screen
+        // position, so falling text piles up on them and slides around them.
+        // Coordinates are relative to the canvas, which covers the whole page
+        // (not just the screen), so obstacles stay aligned while scrolling.
+        function addObstacles() {
+          const OBSTACLE_PADDING = 8;
+          const canvasRect = canvas.getBoundingClientRect();
+          const obstacles = Array.from(
+            document.querySelectorAll<HTMLElement>('[data-teaser-obstacle]')
+          ).map((el) => {
+            const r = el.getBoundingClientRect();
+            const w = r.width + OBSTACLE_PADDING * 2;
+            const h = r.height + OBSTACLE_PADDING * 2;
+            return Bodies.rectangle(
+              r.left - canvasRect.left + r.width / 2,
+              r.top - canvasRect.top + r.height / 2,
+              w,
+              h,
+              { isStatic: true }
+            );
+          });
+          Composite.add(engine.world, obstacles);
+        }
+
+        addObstacles();
+        animationId = requestAnimationFrame(draw);
       });
 
       return () => {
@@ -234,6 +302,7 @@ export default function Teaser({ text }: { text: string }) {
       const newW = cvs.offsetWidth;
       // Ignore height-only changes — iOS fires resize as the toolbar shows/hides
       // during scroll, which would blank the canvas on every scroll gesture.
+      // The page layout uses svh units, so the toolbar doesn't move anything.
       if (Math.abs(newW - lastW) < 5) return;
       lastW = newW;
       clearTimeout(resizeTimer);
@@ -245,10 +314,19 @@ export default function Teaser({ text }: { text: string }) {
       }, 150);
     }
 
-    window.addEventListener('resize', handleResize);
-    currentCleanup = start(canvas);
+    // Start only once web fonts have loaded: the description's final height
+    // (which sets the page height, the canvas size and the obstacle positions)
+    // depends on them.
+    let disposed = false;
+    document.fonts.ready.then(() => {
+      if (disposed || !canvasRef.current) return;
+      lastW = canvasRef.current.offsetWidth;
+      window.addEventListener('resize', handleResize);
+      currentCleanup = start(canvasRef.current);
+    });
 
     return () => {
+      disposed = true;
       currentCleanup?.();
       window.removeEventListener('resize', handleResize);
       clearTimeout(resizeTimer);

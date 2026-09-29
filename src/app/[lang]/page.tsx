@@ -23,15 +23,21 @@ export default async function HomePage({ params }: Props) {
   return (
     <>
       {/* Teaser is a client component: it needs window dimensions and
-          Matter.js, which are browser-only. It renders a <div id="teaser">
-          with a <canvas> inside — see Teaser.tsx for the physics setup. */}
+          Matter.js, which are browser-only. It renders a fixed, full-screen
+          <div id="teaser"> behind the page — see Teaser.tsx for the physics. */}
       <Teaser text={content.home.teaserText} />
 
+      {/* The home page fits one screen: this <main> fills the space between
+          header and footer and pushes the description to the bottom. */}
       <main id="main-content" className="home-content">
         {/* project-wrapper gives the paragraph the same grid-inset layout
-            as content sections on other pages (columns 4–8 on desktop). */}
+            as content sections on other pages (columns 4–8 on desktop).
+            data-teaser-obstacle turns it into a solid body in the physics
+            world, so falling text lands on it and slides around it. */}
         <div className="project-wrapper">
-          <p>{content.home.description}</p>
+          <p className="home-description" data-teaser-obstacle>
+            {content.home.description}
+          </p>
         </div>
       </main>
     </>

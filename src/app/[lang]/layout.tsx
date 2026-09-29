@@ -72,7 +72,9 @@ export default async function LangLayout({ children, params }: Props) {
             their <main> — the layout doesn't add any wrapper around children. */}
         {children}
 
-        <footer className="site-footer">
+        {/* data-teaser-obstacle: on the home page, the footer acts as the floor
+            of the teaser's physics world (ignored on all other pages). */}
+        <footer className="site-footer" data-teaser-obstacle>
           <div className="main-footer">
             <span className="footer-copyright">
               &copy; {new Date().getFullYear()} Kaspar 2028 |

@@ -1,8 +1,9 @@
 import { createClient } from 'next-sanity';
+import { projectId, dataset } from '@/sanity/env';
 
 export const client = createClient({
-  projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
-  dataset: process.env.NEXT_PUBLIC_SANITY_DATASET!,
+  projectId,
+  dataset,
   // Pin to a specific API version so future Sanity API changes don't silently
   // break your queries. Use today's date when you first set this up.
   apiVersion: '2024-01-01',

@@ -1,6 +1,7 @@
 import { defineConfig } from 'sanity';
 import { structureTool } from 'sanity/structure';   // note: not 'sanity/plugins/structure'
 import { schemaTypes } from './schemas';
+import { projectId, dataset } from './env';
 
 export default defineConfig({
   name: 'kaspar-studio',
@@ -8,8 +9,8 @@ export default defineConfig({
   // Tells the Studio where it's hosted so internal navigation URLs are correct.
   // Without this, Studio tries to treat the "studio" path segment as a tool name.
   basePath: '/studio',
-  projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
-  dataset: process.env.NEXT_PUBLIC_SANITY_DATASET!,
+  projectId,
+  dataset,
 
   plugins: [
     structureTool({

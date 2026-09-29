@@ -149,4 +149,6 @@ The code is on GitHub (`lenagieseke/project_kaspar_website`) and hosted on [Rend
 - **Code changes:** push to `main`. Render rebuilds and deploys automatically (~2–4 min).
 - **Content changes:** edit in `/studio` on the live site. The edits appear within ~1–2 min, with no deploy needed (see *Caching* above).
 
+**If the service was created as a plain "Web Service"** (not via Blueprint), Render ignores `render.yaml`. In that case, set `NEXT_PUBLIC_SANITY_PROJECT_ID` and `NEXT_PUBLIC_SANITY_DATASET` by hand under the service's **Environment** tab. If they're missing, the build fails with `Missing environment variable NEXT_PUBLIC_SANITY_PROJECT_ID`.
+
 **Free plan caveat:** a free Render service goes to sleep after ~15 minutes without visitors, and the next visit then takes about a minute to load. For a public launch, switch `plan: free` to `starter` in `render.yaml` (or change it in the dashboard).

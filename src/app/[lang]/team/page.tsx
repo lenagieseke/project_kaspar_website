@@ -59,7 +59,7 @@ function MemberCard({ member }: { member: TeamMember }) {
   const photoWidth = 1200;
   return (
     <>
-      {photo && (
+      {photo ? (
         <Image
           src={croppedImageUrl(photo, PHOTO_ASPECT, photoWidth)}
           alt={photo.alt}
@@ -70,6 +70,12 @@ function MemberCard({ member }: { member: TeamMember }) {
           blurDataURL={photo.lqip}
           className="team-photo"
         />
+      ) : (
+        // No photo in Sanity yet: same-size box with initials, so the grid
+        // stays even. Decorative only — the name follows as text.
+        <div className="team-photo team-photo-placeholder" aria-hidden="true">
+          {initials(member.name)}
+        </div>
       )}
       {member.role && <span className="card-kicker">{member.role}</span>}
       <h2 className="card-title">{member.name}</h2>
@@ -123,6 +129,15 @@ function ExternalLink({ href, children }: { href: string; children: React.ReactN
       {children} ↗
     </a>
   );
+}
+
+// "Manuel Flurin Hendry" → "MH" (first and last name)
+function initials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '';
+  const first = parts[0][0];
+  const last = parts.length > 1 ? parts[parts.length - 1][0] : '';
+  return (first + last).toUpperCase();
 }
 
 // "https://www.residenztheater.de/about" → "residenztheater.de"

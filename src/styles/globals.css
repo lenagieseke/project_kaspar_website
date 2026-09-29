@@ -365,6 +365,17 @@ a {
   background: #f2f2f2; /* visible while the photo loads */
 }
 
+/* Shown instead of the photo while none is uploaded (TeamPage in
+ * team/page.tsx). Takes its size from .team-photo. */
+.team-photo-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display), serif;
+  font-size: clamp(3rem, 6vw, 5rem);
+  color: #bbb;
+}
+
 /* "Role in the project": set apart from the general bio. */
 .team-project-role {
   font-style: italic;

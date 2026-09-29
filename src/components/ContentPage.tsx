@@ -1,4 +1,4 @@
-// Shared layout for the Sanity-driven content pages (The Project, K.ai, Team):
+// Shared layout for the Sanity-driven content pages (The Project, K.ai):
 // a large page title, then each section as a heading + rich-text body in the
 // alternating project-wrapper grid (see globals.css).
 

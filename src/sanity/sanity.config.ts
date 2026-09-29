@@ -40,6 +40,20 @@ export default defineConfig({
             S.listItem().title('News Posts').child(
               S.documentTypeList('newsPost')
             ),
+            S.divider(),
+            // Sorted like on the Team page (by the "Order" field, then name).
+            S.listItem().title('Team Members').child(
+              S.documentTypeList('teamMember').defaultOrdering([
+                { field: 'order', direction: 'asc' },
+                { field: 'name', direction: 'asc' },
+              ])
+            ),
+            S.listItem().title('Institutions').child(
+              S.documentTypeList('institution').defaultOrdering([
+                { field: 'order', direction: 'asc' },
+                { field: 'name', direction: 'asc' },
+              ])
+            ),
           ]),
     }),
   ],

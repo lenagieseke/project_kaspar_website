@@ -31,7 +31,7 @@ src/
 │   │   ├── page.tsx            # HOME: teaser + description
 │   │   ├── the-project/        # contentPage "the-project"
 │   │   ├── kai/                # contentPage "kai"
-│   │   ├── team/               # contentPage "team"
+│   │   ├── team/               # team members + institutions
 │   │   ├── news/               # post list + news/[slug] detail page
 │   │   └── impressum/          # imprint (hardcoded, not in Sanity)
 │   └── studio/
@@ -39,15 +39,18 @@ src/
 │       └── [[...tool]]/        # embedded Sanity Studio
 ├── components/
 │   ├── Teaser.tsx              # falling-text physics animation (client component)
-│   ├── ContentPage.tsx         # shared layout for The Project, K.ai, Team
+│   ├── ContentPage.tsx         # shared layout for The Project, K.ai
+│   ├── CardGrid.tsx            # staggered 3-column card grid (News, Team)
+│   ├── BackToTop.tsx           # back-to-top arrow
 │   └── Navigation.tsx          # nav links, active state, mobile hamburger
 ├── lib/
 │   ├── content.ts              # getContent(), types, locale helpers, navItems
+│   ├── image.ts                # Sanity image URLs (crop/hotspot) for next/image
 │   └── sanity.ts               # Sanity client
 ├── sanity/
 │   ├── env.ts                  # reads + checks the NEXT_PUBLIC_SANITY_* variables
 │   ├── sanity.config.ts        # Studio config + sidebar structure
-│   └── schemas/                # siteSettings, contentPage, newsPost
+│   └── schemas/                # siteSettings, contentPage, newsPost, teamMember, institution
 └── styles/globals.css          # most of the styling
 public/                         # favicons, web manifest
 docs/sanity-integration.md      # step-by-step guide to how Sanity was set up
@@ -113,8 +116,10 @@ Editor ──► /studio (Sanity Studio, embedded)
 | Type           | Purpose                                            | Fields                                                                          |
 | -------------- | -------------------------------------------------- | ------------------------------------------------------------------------------- |
 | `siteSettings` | Singleton (exactly one document) for the home page | `homeDescription_*`, `teaserText_*` (the text that falls in the teaser)         |
-| `contentPage`  | The Project, K.ai, Team                            | `pageId` + a list of `sections` (`heading_*`, `body_*` as Portable Text)        |
+| `contentPage`  | The Project, K.ai                                  | `pageId` + a list of `sections` (`heading_*`, `body_*` as Portable Text)        |
 | `newsPost`     | News & Writings                                    | `slug`, `title_*`, `date`, `category` (news/article/tutorial), `tags`, `body_*` |
+| `teamMember`   | Team page, one card each                           | `name`, `role_*` (short title), `projectRole_*` (role in the project), `photo` (with focal point), `bio_*` (60–100 words, warns otherwise), `links`, `socials`, `order` |
+| `institution`  | Team page, "Institutions" section                  | `name`, `logo`, `description_*`, `url`, `order` |
 
 The Studio's sidebar (Site Settings pinned at the top, then pages and posts) is defined in `src/sanity/sanity.config.ts`.
 
@@ -129,8 +134,10 @@ The Studio's sidebar (Site Settings pinned at the top, then pages and posts) is 
 - **Add a new content page:**
   1. Add its `pageId` to the options list in `schemas/contentPage.ts`.
   2. Add a key for it to `SiteContent` and `getContent()`.
-  3. Create `src/app/[lang]/<page>/page.tsx`, copying `team/page.tsx` as a template (it renders the shared `ContentPage` component).
+  3. Create `src/app/[lang]/<page>/page.tsx`, copying `kai/page.tsx` as a template (it renders the shared `ContentPage` component).
   4. Add a nav link.
+- **Team members and institutions:** add them in the Studio under *Team Members* / *Institutions*. The *Order* field sets their position (lowest first; without a number they come last, sorted by name).
+- **Images:** uploaded to Sanity, then resized by `next/image` and served from this site's own domain (allowed source configured in `next.config.ts`).
 - **Change styles:** most styling is in `src/styles/globals.css`. It uses a 10-column grid; `.project-wrapper` is the inset content column. There's one responsive breakpoint at 768px, below which the hamburger menu appears.
 
 ---

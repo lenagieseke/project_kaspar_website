@@ -13,7 +13,6 @@ export const contentPage = defineType({
         list: [
           { title: 'The Project', value: 'the-project' },
           { title: 'K.ai',        value: 'kai' },
-          { title: 'Team',        value: 'team' },
         ],
       },
       validation: (Rule) => Rule.required(),

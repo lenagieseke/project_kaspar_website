@@ -134,13 +134,27 @@ The Studio's sidebar (Site Settings pinned at the top, then pages and posts) is 
 
 ## Deployment (GitHub → Render)
 
-The code is on GitHub (`lenagieseke/project_kaspar_website`) and hosted on [Render](https://render.com) as a Node web service. The service is defined in `render.yaml`, a "Blueprint" that Render reads from the repo. The Node version is set to 22 there and in `.node-version`.
+The code is on GitHub (`lenagieseke/project_kaspar_website`) and hosted on [Render](https://render.com) as a **Web Service** (not a Static Site). It has to be a Web Service because the proxy, the one-minute content refresh and `/studio` all need a running Next.js server. All settings live in the Render dashboard. The only deployment-related file in the repo is `.node-version`, which tells Render to use Node 22.
 
 **First-time setup**
 
-1. Push the repo to GitHub, including `render.yaml`.
-2. In Render: **New → Blueprint**, connect the GitHub repo, and select it.
-3. When asked, enter `NEXT_PUBLIC_SANITY_PROJECT_ID`. The dataset is already set to `production`.
+1. In Render: **New → Web Service** → connect the GitHub repo.
+2. Settings:
+
+   | Setting | Value |
+   |---|---|
+   | Language | Node |
+   | Branch | `main` |
+   | Region | Frankfurt |
+   | Build Command | `npm ci && npm run build` |
+   | Start Command | `npm start` |
+   | Instance Type | Free (see caveat below) |
+
+3. **Environment Variables:**
+   - `NEXT_PUBLIC_SANITY_PROJECT_ID`: the value from your `.env.local`
+   - `NEXT_PUBLIC_SANITY_DATASET`: `production`
+
+   If either is missing, the build fails with `Missing environment variable …`.
 4. After the first deploy, add the Render URL (e.g. `https://kaspar-website.onrender.com`) as a CORS origin in Sanity, with **Allow credentials** checked (sanity.io/manage → API → CORS origins). Without this, `/studio` won't work on the live site.
 5. If a custom domain is added later, add it in Render (Settings → Custom Domains) and as a Sanity CORS origin too.
 
@@ -148,7 +162,6 @@ The code is on GitHub (`lenagieseke/project_kaspar_website`) and hosted on [Rend
 
 - **Code changes:** push to `main`. Render rebuilds and deploys automatically (~2–4 min).
 - **Content changes:** edit in `/studio` on the live site. The edits appear within ~1–2 min, with no deploy needed (see *Caching* above).
+- **Changing packages:** after `npm install <package>`, commit `package-lock.json` together with `package.json`. `npm ci` on Render fails if the two don't match. Render uses npm 10 (bundled with Node 22); if the build complains about the lock file, regenerate it with `npx npm@10 install`.
 
-**If the service was created as a plain "Web Service"** (not via Blueprint), Render ignores `render.yaml`. In that case, set `NEXT_PUBLIC_SANITY_PROJECT_ID` and `NEXT_PUBLIC_SANITY_DATASET` by hand under the service's **Environment** tab. If they're missing, the build fails with `Missing environment variable NEXT_PUBLIC_SANITY_PROJECT_ID`.
-
-**Free plan caveat:** a free Render service goes to sleep after ~15 minutes without visitors, and the next visit then takes about a minute to load. For a public launch, switch `plan: free` to `starter` in `render.yaml` (or change it in the dashboard).
+**Free plan caveat:** a free Render service goes to sleep after ~15 minutes without visitors, and the next visit then takes about a minute to load. For a public launch, switch the instance type to Starter in the dashboard.

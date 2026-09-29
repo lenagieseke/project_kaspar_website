@@ -10,8 +10,9 @@
  * (alternating left/right alignment), a 10-column grid where child elements
  * reference named column spans, and position:fixed with gradient fades.
  * Encoding all of that as className strings would make the templates harder
- * to read than just keeping the CSS here. Tailwind is still available in
- * components for one-off spacing or utility needs.
+ * to read than just keeping the CSS here. Tailwind currently provides only its
+ * base reset ("preflight": no default margins, unstyled lists, etc.), which the
+ * rules below build on; its utility classes are available but unused.
  *
  * Core layout primitive: a 10-column CSS grid at max-width 1440px.
  * All page sections (nav, content, footer) place themselves into this grid
@@ -21,7 +22,7 @@
 /* ---- Global Styles ---- */
 
 body {
-  font-family: "Inter", sans-serif;
+  font-family: var(--font-body), sans-serif;
   margin: 0;
   padding: 0;
   line-height: 1.6;
@@ -37,7 +38,7 @@ body {
 }
 
 h1, h2, h3 {
-  font-family: "Libre Caslon Display", serif;
+  font-family: var(--font-display), serif;
 }
 
 a {
@@ -178,10 +179,6 @@ a {
   grid-column: 2 / -2;
 }
 
-#main-content > *.smaller {
-  grid-column: 3 / -3;
-}
-
 #main-content > * img,
 #main-content > * video {
   width: 100%;
@@ -200,13 +197,15 @@ a {
   grid-template-columns: repeat(10, 1fr);
 }
 
-.project-wrapper h1 {
+/* Section headings (direct children only — headings inside the rich text
+ * are styled separately under .portable-text below). */
+.project-wrapper > h1 {
   font-size: clamp(2.5rem, 6vw, 6rem);
   grid-column: 2 / -2;
   margin: 0;
 }
 
-.project-wrapper h1:nth-of-type(2n) {
+.project-wrapper > h1:nth-of-type(2n) {
   text-align: right;
 }
 
@@ -228,14 +227,37 @@ a {
   grid-column: 3 / -4;
 }
 
-/* Basic typography inside Portable Text */
+/* Basic typography inside Portable Text (the rich text edited in Sanity).
+ * Tailwind's reset strips default heading sizes and list markers, so both
+ * are set explicitly here. */
 .portable-text p        { margin: 0 0 1em; }
 .portable-text p:last-child { margin-bottom: 0; }
 .portable-text ul,
 .portable-text ol       { padding-left: 1.5em; margin: 0 0 1em; }
+.portable-text ul       { list-style: disc; }
+.portable-text ol       { list-style: decimal; }
+/* List numbers in the heading font, at the size of the list text.
+ * Libre Caslon Display has no italic cut, so the browser slants it. */
+.portable-text ol > li::marker {
+  font-family: var(--font-display), serif;
+  font-style: italic;
+}
 .portable-text li       { margin-bottom: 0.25em; }
 .portable-text strong   { font-weight: 700; }
 .portable-text em       { font-style: italic; }
+
+/* Headings in the rich text: a step below the section headings
+ * (.project-wrapper > h1, up to 6rem). */
+.portable-text h1,
+.portable-text h2,
+.portable-text h3 {
+  line-height: 1.1;
+  margin: 1.5em 0 0.5em;
+}
+.portable-text h1 { font-size: clamp(2rem, 4vw, 4rem); }
+.portable-text h2 { font-size: clamp(1.5rem, 3vw, 2.75rem); }
+.portable-text h3 { font-size: clamp(1.25rem, 2vw, 1.75rem); }
+.portable-text > :first-child { margin-top: 0; }
 
 /* ---- Home page teaser ---- */
 
@@ -268,11 +290,9 @@ a {
   margin-bottom: 0.5rem;
 }
 
-/* 10-column grid matching the content pages. Odd cards sit left of centre
- * (cols 2–5), even cards right of centre (cols 5–8). They share column 5,
- * so the browser stacks them vertically instead of placing them side-by-side —
- * giving the same alternating left/right rhythm as The Project page.
- * align-items: start lets the per-card translateY offsets show through. */
+/* 10-column grid matching the content pages, with three card columns
+ * (see .news-card below). align-items: start lets the per-card translateY
+ * offsets (set inline in news/page.tsx) show through. */
 .news-grid {
   display: grid;
   grid-template-columns: repeat(10, 1fr);
@@ -285,7 +305,6 @@ a {
 .news-card {
   display: flex;
   flex-direction: column;
-  /* margin-bottom: -3rem; */
 }
 
 /* Three equally-spaced columns, each 3 grid columns wide.
@@ -316,7 +335,7 @@ a {
 }
 
 .news-card-title {
-  font-family: "Libre Caslon Display", serif;
+  font-family: var(--font-display), serif;
   font-size: clamp(1.4rem, 2.5vw, 2.2rem);
   line-height: 1.1;
   margin: 0 0 0.6rem;
@@ -350,13 +369,6 @@ a {
 
 .footer-copyright {
   grid-column: 2 / 7;
-}
-
-.footer-nav {
-  grid-column: 7 / 10;
-  display: flex;
-  justify-content: flex-end;
-  align-items: center;
 }
 
 .footer-link {
@@ -394,7 +406,7 @@ a {
 }
 
 .impressum-wrapper h2 {
-  font-family: "Libre Caslon Display", serif;
+  font-family: var(--font-display), serif;
   font-size: clamp(1.2rem, 2vw, 1.6rem);
   margin: 0 0 0.5rem;
 }
@@ -410,6 +422,41 @@ a {
 }
 
 .impressum-wrapper a:hover {
+  color: #ccc;
+}
+
+/* ---- Back-to-top arrow (BackToTop.tsx) ---- */
+
+/* Fixed in the bottom-right corner, above the page and the home teaser.
+ * Always in the DOM; shown/hidden via opacity so it can fade (same pattern
+ * as the mobile nav list). The translucent white disc keeps the arrow
+ * readable on top of text. */
+.back-to-top {
+  position: fixed;
+  right: 1.5rem;
+  bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+  z-index: 1000;
+  width: 44px;  /* comfortable touch target */
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.85);
+  color: #000;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s, color 0.2s;
+}
+
+.back-to-top.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.back-to-top:hover {
   color: #ccc;
 }
 
@@ -500,7 +547,7 @@ a {
     padding: 0 1.5rem;
   }
 
-  .project-wrapper h1 {
+  .project-wrapper > h1 {
     grid-column: 1 / -1;
     padding: 0 1.5rem;
   }
@@ -534,10 +581,6 @@ a {
     justify-content: space-between;
     padding: 0 1.5rem;
     height: 70px;
-  }
-
-  .footer-nav {
-    grid-column: unset;
   }
 
   .impressum-wrapper {

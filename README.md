@@ -12,8 +12,8 @@ The site is a bilingual (EN/DE) Next.js app. Content is edited in Sanity, a host
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Base Structure              | [Next.js 16](https://nextjs.org) (App Router), React 19, TypeScript                                                                                                                                                                                           |
 | Content                     | [Sanity](https://sanity.io) v5 via `next-sanity` (Sanity's official add-on for connecting Sanity to a Next.js site) and rich text rendered with `@portabletext/react` (library that turns that data into real HTML as Sanity doesn't store rich text as HTML) |
-| Styling                     | CSS in `src/styles/globals.css`, plus Tailwind CSS 3 (config in `tailwind.config.ts`)                                                                                                                                                                         |
-| Fonts                       | Libre Caslon Display (headings) + Inter (body), loaded from Google Fonts                                                                                                                                                                                      |
+| Styling                     | CSS in `src/styles/globals.css`. Tailwind CSS 3 is installed but only its base reset is used (config in `tailwind.config.ts`) |
+| Fonts                       | Libre Caslon Display (headings, teaser) + Inter (body), self-hosted via `next/font`: downloaded at build time, so visitors never contact Google |
 | Teaser animation            | Canvas 2D + [Matter.js](https://brm.io/matter-js/) physics                                                                                                                                                                                                    |
 | i18n (internationalization) | `[lang]` route segment + `src/proxy.ts` for locale redirects, every page lives once under [lang], the language is always the first part of the URL, and proxy.ts adds the language to the URL when a link leaves it out                                       |
 
@@ -27,7 +27,7 @@ src/
 ├── proxy.ts                    # locale redirect (runs before each request)
 ├── app/
 │   ├── [lang]/
-│   │   ├── layout.tsx          # root layout: <html lang>, fonts, CSS, metadata, header, nav, footer
+│   │   ├── layout.tsx          # root layout: <html lang>, fonts, CSS, header, nav, footer; 404 for unknown languages
 │   │   ├── page.tsx            # HOME: teaser + description
 │   │   ├── the-project/        # contentPage "the-project"
 │   │   ├── kai/                # contentPage "kai"
@@ -39,16 +39,19 @@ src/
 │       └── [[...tool]]/        # embedded Sanity Studio
 ├── components/
 │   ├── Teaser.tsx              # falling-text physics animation (client component)
+│   ├── ContentPage.tsx         # shared layout for The Project, K.ai, Team
 │   └── Navigation.tsx          # nav links, active state, mobile hamburger
 ├── lib/
-│   ├── content.ts              # getContent(), types, navItems
+│   ├── content.ts              # getContent(), types, locale helpers, navItems
 │   └── sanity.ts               # Sanity client
 ├── sanity/
+│   ├── env.ts                  # reads + checks the NEXT_PUBLIC_SANITY_* variables
 │   ├── sanity.config.ts        # Studio config + sidebar structure
 │   └── schemas/                # siteSettings, contentPage, newsPost
 └── styles/globals.css          # most of the styling
 public/                         # favicons, web manifest
 docs/sanity-integration.md      # step-by-step guide to how Sanity was set up
+eslint.config.mjs               # lint rules (Next.js recommended + TypeScript)
 ```
 
 ---
@@ -75,7 +78,7 @@ Your project ID is listed at [sanity.io/manage](https://sanity.io/manage).
 npm run dev      # dev server → http://localhost:3000
 npm run build    # production build
 npm run start    # serve the production build
-npm run lint
+npm run lint     # ESLint (config: eslint.config.mjs)
 ```
 
 - Site: http://localhost:3000 (redirects to `/en`)
@@ -126,7 +129,7 @@ The Studio's sidebar (Site Settings pinned at the top, then pages and posts) is 
 - **Add a new content page:**
   1. Add its `pageId` to the options list in `schemas/contentPage.ts`.
   2. Add a key for it to `SiteContent` and `getContent()`.
-  3. Create `src/app/[lang]/<page>/page.tsx`, copying `kai/page.tsx` as a template.
+  3. Create `src/app/[lang]/<page>/page.tsx`, copying `team/page.tsx` as a template (it renders the shared `ContentPage` component).
   4. Add a nav link.
 - **Change styles:** most styling is in `src/styles/globals.css`. It uses a 10-column grid; `.project-wrapper` is the inset content column. There's one responsive breakpoint at 768px, below which the hamburger menu appears.
 

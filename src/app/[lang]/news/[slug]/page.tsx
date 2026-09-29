@@ -1,10 +1,12 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { PortableText } from '@portabletext/react';
-import { getContent, locales, type Locale } from '@/lib/content';
+import { getContent, locales, toLocale } from '@/lib/content';
 
 type Props = { params: Promise<{ lang: string; slug: string }> };
 
+// Pre-render every post at build time. Posts published later are rendered on
+// their first visit (dynamicParams defaults to true).
 export async function generateStaticParams() {
   const results = await Promise.all(
     locales.map(async (lang) => {
@@ -17,7 +19,7 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { lang, slug } = await params;
-  const locale: Locale = lang === 'de' ? 'de' : 'en';
+  const locale = toLocale(lang);
   const { news } = await getContent(locale);
   const post = news.posts.find((p) => p.slug === slug);
   return { title: post ? `${post.title} | Kaspar 2028` : 'Kaspar 2028' };
@@ -25,7 +27,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function NewsArticle({ params }: Props) {
   const { lang, slug } = await params;
-  const locale: Locale = lang === 'de' ? 'de' : 'en';
+  const locale = toLocale(lang);
   const { news } = await getContent(locale);
   const post = news.posts.find((p) => p.slug === slug);
 

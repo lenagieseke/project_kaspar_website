@@ -2,15 +2,28 @@
 //
 // getContent(locale) queries all Sanity documents (schemas in src/sanity/schemas)
 // and maps them to the typed SiteContent shape, picking the `_en` or `_de`
-// field for each value. Page components only call getContent(locale) and never
-// query Sanity directly, so schema changes are absorbed here.
-//
-// Dates are stored as pre-formatted strings (not Date objects) to avoid
-// server/client hydration mismatches when rendering them inside JSX.
+// field for each value (falling back to English when German is empty). Page
+// components only call getContent(locale) and never query Sanity directly, so
+// schema changes are absorbed here.
+import type { PortableTextBlock } from '@portabletext/react';
 import { client } from './sanity';
+
+// ---- Locales ----
 
 export type Locale = 'en' | 'de';
 export const locales: Locale[] = ['en', 'de'];
+
+export function isLocale(value: string): value is Locale {
+  return (locales as string[]).includes(value);
+}
+
+// Turns the [lang] URL segment into a Locale. The [lang] layout already
+// returns 404 for anything else, so the English fallback is just a safe default.
+export function toLocale(lang: string): Locale {
+  return isLocale(lang) ? lang : 'en';
+}
+
+// ---- Navigation ----
 
 export type NavItem = {
   href: string;
@@ -20,37 +33,29 @@ export type NavItem = {
 // Single source of truth for nav links. Adding or removing a page means
 // editing this array — the Navigation component iterates it at runtime.
 export const navItems: NavItem[] = [
-  { href: '/the-project', label: { en: 'The Project', de: 'Das Projekt' } },
-  { href: '/kai',         label: { en: 'K.ai',        de: 'K.ai' } },
-  { href: '/team',        label: { en: 'Team',         de: 'Team' } },
+  { href: '/the-project', label: { en: 'The Project',     de: 'Das Projekt' } },
+  { href: '/kai',         label: { en: 'K.ai',            de: 'K.ai' } },
+  { href: '/team',        label: { en: 'Team',            de: 'Team' } },
   { href: '/news',        label: { en: 'News & Writings', de: 'News & Texte' } },
 ];
 
-// Section is the shared shape for all content pages (The Project, K.ai, Team).
-// Each section maps to one h1 + one PortableText block in the project-wrapper layout.
-// body is a Portable Text array (Sanity block content), not a plain string.
-export type Section = { heading: string; body: any[] };
+// ---- Content types (what pages receive) ----
+
+// One heading + one rich-text body on a content page (The Project, K.ai, Team).
+// `key` is Sanity's stable array-item id, used as the React list key.
+export type Section = { key: string; heading: string; body: PortableTextBlock[] };
 
 export type NewsPost = {
   slug: string;
   title: string;
-  date: string; // pre-formatted string, e.g. "Mar 16, 2026"
+  // Pre-formatted (e.g. "16 March 2026" / "16. März 2026") rather than a Date,
+  // so server and client render identical text (no hydration mismatch).
+  date: string;
   category: 'news' | 'article' | 'tutorial';
   tags: string[];
-  body: any[]; // Portable Text array
+  body: PortableTextBlock[];
 };
 
-// Extracts a plain-text string from a Portable Text array for use in excerpts.
-// Only looks at paragraph blocks (ignores headings, lists, etc.).
-export function portableTextToPlain(blocks: any[]): string {
-  return (blocks ?? [])
-    .filter((b) => b._type === 'block' && b.children)
-    .map((b) => b.children.map((c: any) => c.text ?? '').join(''))
-    .join(' ');
-}
-
-// SiteContent defines the expected shape of data for every page. When Sanity
-// is added, the GROQ query result should be cast to (or validated against) this type.
 export type SiteContent = {
   home: { description: string; teaserText: string };
   theProject: { sections: Section[] };
@@ -58,6 +63,39 @@ export type SiteContent = {
   team: { sections: Section[] };
   news: { posts: NewsPost[] };
 };
+
+// ---- Raw Sanity document shapes (what the queries return) ----
+// Every field may be missing while an editor hasn't filled it in yet.
+
+type Localized<Name extends string, T> = { [K in `${Name}_${Locale}`]?: T };
+
+type SiteSettingsDoc =
+  Localized<'homeDescription', string> & Localized<'teaserText', string>;
+
+type SectionItem = { _key: string } &
+  Localized<'heading', string> & Localized<'body', PortableTextBlock[]>;
+
+type ContentPageDoc = { pageId?: string; sections?: SectionItem[] };
+
+type NewsPostDoc = {
+  slug?: { current?: string };
+  date?: string;
+  category?: NewsPost['category'];
+  tags?: string[];
+} & Localized<'title', string> & Localized<'body', PortableTextBlock[]>;
+
+// ---- Helpers ----
+
+// Extracts plain text from Portable Text, for excerpts. Only looks at text
+// blocks (paragraphs, headings, list items); ignores images and other objects.
+export function portableTextToPlain(blocks: PortableTextBlock[]): string {
+  return blocks
+    .filter((b) => b._type === 'block' && Array.isArray(b.children))
+    .map((b) => (b.children as { text?: string }[]).map((c) => c.text ?? '').join(''))
+    .join(' ');
+}
+
+// ---- Fetching ----
 
 // Pages are pre-rendered at build time, then regenerated in the background at
 // most once per REVALIDATE_SECONDS when visited (Incremental Static
@@ -67,55 +105,55 @@ const REVALIDATE_SECONDS = 60;
 const fetchOptions = { next: { revalidate: REVALIDATE_SECONDS } };
 
 export async function getContent(locale: Locale): Promise<SiteContent> {
-  // Fetch all three content types in parallel — one round trip each,
-  // but they run concurrently so total wait time = the slowest one.
+  // The three queries run in parallel, so the total wait is the slowest one.
   const [settings, pages, posts] = await Promise.all([
-    client.fetch(`*[_type == "siteSettings"][0]`, {}, fetchOptions),
-    client.fetch(`*[_type == "contentPage"]`, {}, fetchOptions),
-    client.fetch(`*[_type == "newsPost"] | order(date desc)`, {}, fetchOptions),
+    client.fetch<SiteSettingsDoc | null>(`*[_type == "siteSettings"][0]`, {}, fetchOptions),
+    client.fetch<ContentPageDoc[]>(`*[_type == "contentPage"]`, {}, fetchOptions),
+    client.fetch<NewsPostDoc[]>(`*[_type == "newsPost"] | order(date desc)`, {}, fetchOptions),
   ]);
 
-  // Helper: find the document for a given page and map its sections to the
-  // locale-appropriate heading/body strings.
+  // Picks the field for the current locale, falling back to English if the
+  // German one isn't filled in yet.
+  function pick<Name extends string, T>(doc: Localized<Name, T> | null | undefined, name: Name): T | undefined {
+    const fields = doc as Record<string, T | undefined> | null | undefined;
+    return fields?.[`${name}_${locale}`] ?? fields?.[`${name}_en`];
+  }
+
   function sectionsFor(pageId: string): Section[] {
-    const page = (pages ?? []).find((p: any) => p.pageId === pageId);
-    return (page?.sections ?? []).map((s: any) => ({
-      // Fall back to English if the German field isn't filled in yet —
-      // this matches the original Grav site's content_fallback behaviour.
-      heading: s[`heading_${locale}`] ?? s.heading_en ?? '',
-      body:    s[`body_${locale}`] ?? s.body_en ?? [],
+    const page = pages.find((p) => p.pageId === pageId);
+    return (page?.sections ?? []).map((s) => ({
+      key: s._key,
+      heading: pick(s, 'heading') ?? '',
+      body: pick(s, 'body') ?? [],
     }));
   }
 
   return {
     home: {
-      description:
-        settings?.[`homeDescription_${locale}`] ??
-        settings?.homeDescription_en ??
-        '',
-      teaserText:
-        settings?.[`teaserText_${locale}`] ??
-        settings?.teaserText_en ??
-        '',
+      description: pick(settings, 'homeDescription') ?? '',
+      teaserText: pick(settings, 'teaserText') ?? '',
     },
     theProject: { sections: sectionsFor('the-project') },
-    kai:         { sections: sectionsFor('kai') },
-    team:        { sections: sectionsFor('team') },
+    kai:        { sections: sectionsFor('kai') },
+    team:       { sections: sectionsFor('team') },
     news: {
-      posts: (posts ?? []).map((p: any) => ({
-        slug:     p.slug?.current ?? '',
-        title:    p[`title_${locale}`] ?? p.title_en ?? '',
-        date:     p.date
-                    ? new Date(p.date).toLocaleDateString(
-                        locale === 'de' ? 'de-DE' : 'en-GB',
-                        { day: 'numeric', month: 'long', year: 'numeric' }
-                      )
-                    : '',
-        category: p.category ?? 'news',
-        tags:     p.tags ?? [],
-        body:     p[`body_${locale}`] ?? p.body_en ?? [],
-      })),
+      posts: posts
+        // A post without a slug has no URL, so it can't be listed.
+        .filter((p) => p.slug?.current)
+        .map((p) => ({
+          slug: p.slug!.current!,
+          title: pick(p, 'title') ?? '',
+          date: p.date
+            ? new Date(p.date).toLocaleDateString(locale === 'de' ? 'de-DE' : 'en-GB', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric',
+              })
+            : '',
+          category: p.category ?? 'news',
+          tags: p.tags ?? [],
+          body: pick(p, 'body') ?? [],
+        })),
     },
   };
 }
-

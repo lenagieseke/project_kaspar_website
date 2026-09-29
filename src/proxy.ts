@@ -18,8 +18,9 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL('/en', request.url));
   }
 
-  // Already has a valid locale prefix — nothing to do.
-  const hasLocale = locales.some((l) => pathname.startsWith(`/${l}`));
+  // Already has a valid locale prefix — nothing to do. (Matches /en and /en/…,
+  // but not e.g. /english.)
+  const hasLocale = locales.some((l) => pathname === `/${l}` || pathname.startsWith(`/${l}/`));
   if (hasLocale) return NextResponse.next();
 
   // Path has no locale prefix (e.g. a direct deep link or a misconfigured

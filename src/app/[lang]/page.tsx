@@ -1,42 +1,32 @@
-// Home page: full-viewport physics teaser followed by a short description.
-// The teaser occupies 100vh, so the description is only visible after scrolling.
-// Structure mirrors the original Grav template where #teaser precedes #main-content.
+// Home page: the falling-text teaser as a background layer, with the project
+// description at the bottom of the screen (desktop) or starting 70% down the
+// screen with the rest reached by scrolling (phones). Layout: globals.css.
 
-import type { Metadata } from 'next';
 import Teaser from '@/components/Teaser';
-import { getContent, type Locale } from '@/lib/content';
+import { getContent, toLocale } from '@/lib/content';
 
 type Props = { params: Promise<{ lang: string }> };
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { lang } = await params;
-  return {
-    title: lang === 'de' ? 'Kaspar 2028' : 'Kaspar 2028',
-  };
-}
-
 export default async function HomePage({ params }: Props) {
-  const { lang } = await params;
-  const locale: Locale = lang === 'de' ? 'de' : 'en';
-  const content = await getContent(locale);
+  const locale = toLocale((await params).lang);
+  const { home } = await getContent(locale);
 
   return (
     <>
-      {/* Teaser is a client component: it needs window dimensions and
-          Matter.js, which are browser-only. It renders a fixed, full-screen
-          <div id="teaser"> behind the page — see Teaser.tsx for the physics. */}
-      <Teaser text={content.home.teaserText} />
+      {/* Client component (needs the browser and Matter.js). Renders a canvas
+          behind the whole page — see Teaser.tsx for the physics. */}
+      <Teaser text={home.teaserText} />
 
-      {/* The home page fits one screen: this <main> fills the space between
-          header and footer and pushes the description to the bottom. */}
+      {/* This <main> fills the space between header and footer and pushes
+          the description to the bottom. */}
       <main id="main-content" className="home-content">
-        {/* project-wrapper gives the paragraph the same grid-inset layout
-            as content sections on other pages (columns 4–8 on desktop).
-            data-teaser-obstacle turns it into a solid body in the physics
-            world, so falling text lands on it and slides around it. */}
+        {/* project-wrapper gives the paragraph the same grid inset as content
+            sections on other pages. data-teaser-obstacle turns it into a solid
+            body in the physics world, so falling text lands on it and slides
+            around it. */}
         <div className="project-wrapper">
           <p className="home-description" data-teaser-obstacle>
-            {content.home.description}
+            {home.description}
           </p>
         </div>
       </main>

@@ -1,4 +1,7 @@
 // Physics teaser — Canvas 2D + Matter.js rigid-body simulation.
+// Random words and fragments of `text` fall from the top of the page and pile
+// up on the page elements marked with data-teaser-obstacle (the home
+// description and the footer). Pieces can be dragged with mouse or finger.
 // Must be a client component: it references window, canvas, and Matter.js,
 // none of which exist on the server.
 'use client';
@@ -18,8 +21,9 @@ export default function Teaser({ text }: { text: string }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    const words = text.split(/\s+/).filter((w) => w.length > 0);
+    // Nothing to animate (e.g. the teaser text field is empty in Sanity).
+    if (words.length === 0) return;
 
     let currentCleanup: (() => void) | null = null;
     let resizeTimer: ReturnType<typeof setTimeout>;
@@ -124,8 +128,6 @@ export default function Teaser({ text }: { text: string }) {
           canvas.removeEventListener('touchcancel', onTouchEnd);
         };
 
-        const words = text.split(/\s+/).filter((w) => w.length > 0);
-
         function randomPiece(): { text: string; type: PieceType } {
           const r = Math.random();
           if (r < 0.2) {
@@ -192,7 +194,7 @@ export default function Teaser({ text }: { text: string }) {
 
           const piece = randomPiece();
           const size = randomFontSize(piece.type);
-          const font = `${size}px "Libre Caslon Display", serif`;
+          const font = `${size}px ${displayFont}`;
           const lh = size * 1.1;
 
           ctx.save();
@@ -294,7 +296,7 @@ export default function Teaser({ text }: { text: string }) {
       };
     }
 
-    let lastW = canvas.offsetWidth;
+    let lastW = 0;
 
     function handleResize() {
       const cvs = canvasRef.current;
@@ -314,11 +316,21 @@ export default function Teaser({ text }: { text: string }) {
       }, 150);
     }
 
-    // Start only once web fonts have loaded: the description's final height
-    // (which sets the page height, the canvas size and the obstacle positions)
-    // depends on them.
+    // next/font gives the display font an internal name, exposed as a CSS
+    // variable (see app/[lang]/layout.tsx). Canvas text needs that actual name.
+    const displayFont =
+      (canvasRef.current && getComputedStyle(canvasRef.current).getPropertyValue('--font-display').trim()) ||
+      'serif';
+
+    // Start only once fonts have loaded:
+    // - fonts.ready: the page fonts, which set the description's final height
+    //   (and with it the page height, canvas size and obstacle positions);
+    // - fonts.load: the display font, which only the canvas uses, so the
+    //   browser wouldn't download it on its own before the first piece is
+    //   measured. If it fails to load, the teaser starts anyway (fallback font).
     let disposed = false;
-    document.fonts.ready.then(() => {
+    const displayFontLoaded = document.fonts.load(`16px ${displayFont}`).catch(() => {});
+    Promise.all([document.fonts.ready, displayFontLoaded]).then(() => {
       if (disposed || !canvasRef.current) return;
       lastW = canvasRef.current.offsetWidth;
       window.addEventListener('resize', handleResize);

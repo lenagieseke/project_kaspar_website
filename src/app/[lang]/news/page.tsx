@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { getContent, portableTextToPlain, type Locale } from '@/lib/content';
+import { getContent, portableTextToPlain, toLocale } from '@/lib/content';
 
 type Props = { params: Promise<{ lang: string }> };
 
@@ -9,16 +9,22 @@ type Props = { params: Promise<{ lang: string }> };
 // and there's no React hydration mismatch.
 const CARD_OFFSETS = [0, 40, -20, 30, -40, 10, -15, 35, -25];
 
+const TITLE = { en: 'News & Writings', de: 'News & Texte' };
+const EXCERPT_LENGTH = 160;
+
+function excerpt(text: string): string {
+  return text.length > EXCERPT_LENGTH ? `${text.slice(0, EXCERPT_LENGTH).trimEnd()}…` : text;
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { lang } = await params;
-  return { title: lang === 'de' ? 'News & Texte | Kaspar 2028' : 'News & Writings | Kaspar 2028' };
+  const locale = toLocale((await params).lang);
+  return { title: `${TITLE[locale]} | Kaspar 2028` };
 }
 
 export default async function NewsPage({ params }: Props) {
-  const { lang } = await params;
-  const locale: Locale = lang === 'de' ? 'de' : 'en';
+  const locale = toLocale((await params).lang);
   const { news } = await getContent(locale);
-  const title = locale === 'de' ? 'News & Texte' : 'News & Writings';
+  const title = TITLE[locale];
 
   return (
     <>
@@ -37,7 +43,7 @@ export default async function NewsPage({ params }: Props) {
                 <span className="news-card-category">{post.category}</span>
                 <h2 className="news-card-title">{post.title}</h2>
                 <span className="date">{post.date}</span>
-                <p className="news-card-excerpt">{portableTextToPlain(post.body).slice(0, 160)}&hellip;</p>
+                <p className="news-card-excerpt">{excerpt(portableTextToPlain(post.body))}</p>
               </Link>
             </article>
           ))}

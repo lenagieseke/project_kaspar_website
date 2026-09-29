@@ -1,17 +1,15 @@
 import type { Metadata } from 'next';
-import { type Locale } from '@/lib/content';
+import { toLocale } from '@/lib/content';
 
 type Props = { params: Promise<{ lang: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { lang } = await params;
-  return { title: lang === 'de' ? 'Impressum | Kaspar 2028' : 'Imprint | Kaspar 2028' };
+  const isDE = toLocale((await params).lang) === 'de';
+  return { title: isDE ? 'Impressum | Kaspar 2028' : 'Imprint | Kaspar 2028' };
 }
 
 export default async function ImpressumPage({ params }: Props) {
-  const { lang } = await params;
-  const locale: Locale = lang === 'de' ? 'de' : 'en';
-  const isDE = locale === 'de';
+  const isDE = toLocale((await params).lang) === 'de';
 
   return (
     <>
@@ -31,7 +29,7 @@ function ImpressumDE() {
   return (
     <>
       <section>
-        <h2>Angaben gemäß § 5 TMG</h2>
+        <h2>Angaben gemäß § 5 DDG</h2>
         <p>
           Filmuniversität Babelsberg KONRAD WOLF<br />
           Marlene-Dietrich-Allee 11<br />
@@ -42,9 +40,7 @@ function ImpressumDE() {
 
       <section>
         <h2>Vertreten durch</h2>
-        <p>
-          XX<br />
-        </p>
+        <p>XX</p>
       </section>
 
       <section>
@@ -56,16 +52,12 @@ function ImpressumDE() {
 
       <section>
         <h2>Projektverantwortliche</h2>
-        <p>
-          XX
-        </p>
+        <p>XX</p>
       </section>
 
       <section>
         <h2>Haftungsausschluss</h2>
-        <p>
-          XX
-        </p>
+        <p>XX</p>
       </section>
     </>
   );
@@ -86,9 +78,7 @@ function ImpressumEN() {
 
       <section>
         <h2>Represented by</h2>
-        <p>
-XX
-        </p>
+        <p>XX</p>
       </section>
 
       <section>
@@ -100,16 +90,12 @@ XX
 
       <section>
         <h2>Project</h2>
-        <p>
-XX
-        </p>
+        <p>XX</p>
       </section>
 
       <section>
         <h2>Disclaimer</h2>
-        <p>
-XX
-        </p>
+        <p>XX</p>
       </section>
     </>
   );

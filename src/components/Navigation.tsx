@@ -6,7 +6,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
-import { navItems, type Locale } from '@/lib/content';
+import { locales, navItems, type Locale } from '@/lib/content';
 
 // Receives the active locale from the server layout so it doesn't need to
 // parse the URL itself — the parent already did that work.
@@ -24,7 +24,7 @@ export default function Navigation({ lang }: { lang: Locale }) {
   // Remove the locale prefix to get the route-relative path (e.g. /the-project).
   // This is used to build the equivalent URL in the other language without
   // hard-coding any routes — switching from /en/team to /de/team just works.
-  const rawRoute = pathname.replace(`/${lang}`, '') || '';
+  const rawRoute = pathname.slice(`/${lang}`.length);
 
   return (
     <>
@@ -58,7 +58,7 @@ export default function Navigation({ lang }: { lang: Locale }) {
             Both links are always rendered so the active one can be bolded via
             .lang-active without JS needing to know which is "current". */}
         <li className="lang-switcher">
-          {(['en', 'de'] as Locale[]).map((l) => (
+          {locales.map((l) => (
             <Link
               key={l}
               href={`/${l}${rawRoute}`}

@@ -1,3 +1,9 @@
+'use client';
+
+// Sanity Studio configuration, rendered at /studio (app/studio/[[...tool]]).
+// Marked 'use client' because it contains functions (the sidebar structure)
+// that can only run in the browser, where the Studio lives.
+
 import { defineConfig } from 'sanity';
 import { structureTool } from 'sanity/structure';   // note: not 'sanity/plugins/structure'
 import { schemaTypes } from './schemas';

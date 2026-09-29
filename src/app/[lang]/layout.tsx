@@ -10,9 +10,12 @@
 // Note: navigating between the two root layouts triggers a full page load.
 
 import type { Metadata } from 'next';
+import { Inter, Libre_Caslon_Display } from 'next/font/google';
 import Link from 'next/link';
+import { notFound } from 'next/navigation';
+import BackToTop from '@/components/BackToTop';
 import Navigation from '@/components/Navigation';
-import { locales, type Locale } from '@/lib/content';
+import { isLocale, locales } from '@/lib/content';
 import '@/styles/globals.css';
 
 export const metadata: Metadata = {
@@ -21,6 +24,24 @@ export const metadata: Metadata = {
     "A radical reimagining of Peter Handke's Kaspar at Residenztheater München — integrating AI into live performance.",
   manifest: '/site.webmanifest',
 };
+
+// Fonts are downloaded at build time and served from this site (next/font),
+// so visitors' browsers never contact Google — no IP address is passed to a
+// third party (relevant under GDPR). The CSS variables are used in globals.css
+// and by the teaser canvas.
+const inter = Inter({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '700'],
+  // Real italics for emphasis in the rich text (otherwise the browser
+  // slants the upright font artificially).
+  style: ['normal', 'italic'],
+  variable: '--font-body',
+});
+const caslon = Libre_Caslon_Display({
+  subsets: ['latin'],
+  weight: '400',
+  variable: '--font-display',
+});
 
 type Props = {
   children: React.ReactNode;
@@ -36,24 +57,13 @@ export function generateStaticParams() {
 
 export default async function LangLayout({ children, params }: Props) {
   const { lang } = await params;
-  // Guard against any unexpected locale value arriving via the URL; fall back
-  // to English rather than crashing or serving empty content.
-  const locale: Locale = lang === 'de' ? 'de' : 'en';
+  // Only /en and /de exist — anything else (e.g. /english, /fr) is a 404
+  // rather than silently rendering English content under a wrong URL.
+  if (!isLocale(lang)) notFound();
+  const locale = lang;
 
   return (
-    <html lang={locale}>
-      <head>
-        {/* Google Fonts via <link> rather than next/font because Libre Caslon
-            Display is not available in the next/font/google package. Inter could
-            be migrated to next/font for self-hosting and zero layout shift, but
-            keeping both in one stylesheet request is simpler for now. */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Libre+Caslon+Display&family=Inter:wght@300;400;500;700&display=swap"
-          rel="stylesheet"
-        />
-      </head>
+    <html lang={locale} className={`${inter.variable} ${caslon.variable}`}>
       <body>
         {/* Header is position:fixed (see globals.css .site-header). Pages handle
             their own top-padding via .page-title-header or the teaser height. */}
@@ -85,6 +95,8 @@ export default async function LangLayout({ children, params }: Props) {
 
           </div>
         </footer>
+
+        <BackToTop lang={locale} />
       </body>
     </html>
   );

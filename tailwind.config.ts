@@ -5,8 +5,9 @@ const config: Config = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['"Inter"', 'sans-serif'],
-        display: ['"Libre Caslon Display"', 'serif'],
+        // CSS variables set by next/font in app/[lang]/layout.tsx
+        sans: ['var(--font-body)', 'sans-serif'],
+        display: ['var(--font-display)', 'serif'],
       },
       gridTemplateColumns: {
         '10': 'repeat(10, minmax(0, 1fr))',

@@ -7,6 +7,7 @@
 // schema changes are absorbed here.
 import type { PortableTextBlock } from '@portabletext/react';
 import type { SanityImageObject } from '@sanity/image-url';
+import { SOCIAL_PLATFORMS } from '@/sanity/socialPlatforms';
 import { client } from './sanity';
 
 // ---- Locales ----
@@ -84,8 +85,8 @@ export type Institution = {
   id: string;
   name: string;
   description: string;
-  url: string | null;
   logo: Image | null;
+  links: Link[];        // further links and social media profiles
 };
 
 export type SiteContent = {
@@ -123,35 +124,43 @@ type ImageDoc = SanityImageObject & {
   dimensions?: { width: number; height: number };
 };
 
+// The "Links" and "Social media" lists (src/sanity/schemas/links.ts).
+type LinkFields = {
+  links?: { _key: string; label?: string; url?: string }[];
+  socials?: { _key: string; platform?: string; url?: string }[];
+};
+
 type TeamMemberDoc = {
   _id: string;
   name?: string;
   photo?: ImageDoc;
-  links?: { _key: string; label?: string; url?: string }[];
-  socials?: { _key: string; platform?: string; url?: string }[];
-} & Localized<'role', string> & Localized<'projectRole', string> & Localized<'bio', string>;
+} & LinkFields & Localized<'role', string> & Localized<'projectRole', string> & Localized<'bio', string>;
 
 type InstitutionDoc = {
   _id: string;
   name?: string;
-  url?: string;
   logo?: ImageDoc;
-} & Localized<'description', string>;
+} & LinkFields & Localized<'description', string>;
 
 // ---- Helpers ----
 
-// Display names for the social platforms offered in the Studio
-// (see SOCIAL_PLATFORMS in src/sanity/schemas/teamMember.ts).
-const PLATFORM_LABELS: Record<string, string> = {
-  instagram: 'Instagram',
-  linkedin: 'LinkedIn',
-  mastodon: 'Mastodon',
-  bluesky: 'Bluesky',
-  x: 'X',
-  github: 'GitHub',
-  vimeo: 'Vimeo',
-  youtube: 'YouTube',
-};
+// Display names for the social platforms offered in the Studio.
+const PLATFORM_LABELS: Record<string, string> = Object.fromEntries(
+  SOCIAL_PLATFORMS.map((p) => [p.value, p.title])
+);
+
+// Links first, then social profiles (labelled with the platform name).
+// Entries without a URL (half-filled in the Studio) are left out.
+function toLinks({ links = [], socials = [] }: LinkFields): Link[] {
+  return [
+    ...links.map((l) => ({ key: l._key, label: l.label || l.url || '', url: l.url ?? '' })),
+    ...socials.map((l) => ({
+      key: l._key,
+      label: PLATFORM_LABELS[l.platform ?? ''] ?? l.platform ?? '',
+      url: l.url ?? '',
+    })),
+  ].filter((l) => l.url);
+}
 
 function toImage(doc: ImageDoc | undefined, fallbackAlt: string): Image | null {
   // An image field can exist without an uploaded file (e.g. after removing it).
@@ -225,31 +234,21 @@ export async function getContent(locale: Locale): Promise<SiteContent> {
     theProject: { sections: sectionsFor('the-project') },
     kai:        { sections: sectionsFor('kai') },
     team: {
-      members: members.map((m) => {
-        const name = m.name ?? '';
-        const links = (m.links ?? []).map((l) => ({ key: l._key, label: l.label ?? l.url ?? '', url: l.url ?? '' }));
-        const socials = (m.socials ?? []).map((l) => ({
-          key: l._key,
-          label: PLATFORM_LABELS[l.platform ?? ''] ?? l.platform ?? '',
-          url: l.url ?? '',
-        }));
-        return {
-          id: m._id,
-          name,
-          role: pick(m, 'role') ?? '',
-          projectRole: pick(m, 'projectRole') ?? '',
-          bio: pick(m, 'bio') ?? '',
-          photo: toImage(m.photo, name),
-          // Entries without a URL (half-filled in the Studio) are left out.
-          links: [...links, ...socials].filter((l) => l.url),
-        };
-      }),
+      members: members.map((m) => ({
+        id: m._id,
+        name: m.name ?? '',
+        role: pick(m, 'role') ?? '',
+        projectRole: pick(m, 'projectRole') ?? '',
+        bio: pick(m, 'bio') ?? '',
+        photo: toImage(m.photo, m.name ?? ''),
+        links: toLinks(m),
+      })),
       institutions: institutions.map((i) => ({
         id: i._id,
         name: i.name ?? '',
         description: pick(i, 'description') ?? '',
-        url: i.url ?? null,
         logo: toImage(i.logo, i.name ?? ''),
+        links: toLinks(i),
       })),
     },
     news: {

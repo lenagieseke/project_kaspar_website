@@ -1,4 +1,5 @@
-import { defineArrayMember, defineField, defineType } from 'sanity';
+import { defineField, defineType } from 'sanity';
+import { linksField, socialsField } from './links';
 
 // Bios should be 60–100 words so the cards on the Team page stay similar in
 // length. Outside that range the Studio shows a warning (publishing still works).
@@ -11,26 +12,6 @@ function bioLength(text: string | undefined) {
     ? true
     : `${words} words — aim for ${BIO_WORDS.min}–${BIO_WORDS.max}.`;
 }
-
-// Only web and mail links; blocks e.g. javascript: URLs.
-const linkUrl = (name: string) =>
-  defineField({
-    name,
-    title: 'URL',
-    type: 'url',
-    validation: (Rule) => Rule.required().uri({ scheme: ['https', 'http', 'mailto'] }),
-  });
-
-export const SOCIAL_PLATFORMS = [
-  { title: 'Instagram', value: 'instagram' },
-  { title: 'LinkedIn', value: 'linkedin' },
-  { title: 'Mastodon', value: 'mastodon' },
-  { title: 'Bluesky', value: 'bluesky' },
-  { title: 'X', value: 'x' },
-  { title: 'GitHub', value: 'github' },
-  { title: 'Vimeo', value: 'vimeo' },
-  { title: 'YouTube', value: 'youtube' },
-];
 
 export const teamMember = defineType({
   name: 'teamMember',
@@ -83,46 +64,8 @@ export const teamMember = defineType({
       rows: 5,
       validation: (Rule) => Rule.custom(bioLength).warning(),
     }),
-    defineField({
-      name: 'links',
-      title: 'Links',
-      description: 'Optional, e.g. personal website or portfolio.',
-      type: 'array',
-      of: [
-        defineArrayMember({
-          type: 'object',
-          name: 'link',
-          fields: [
-            defineField({ name: 'label', title: 'Label', type: 'string', validation: (Rule) => Rule.required() }),
-            linkUrl('url'),
-          ],
-          preview: { select: { title: 'label', subtitle: 'url' } },
-        }),
-      ],
-    }),
-    defineField({
-      name: 'socials',
-      title: 'Social media',
-      description: 'Optional. Enter the full profile URL (e.g. https://instagram.com/name).',
-      type: 'array',
-      of: [
-        defineArrayMember({
-          type: 'object',
-          name: 'social',
-          fields: [
-            defineField({
-              name: 'platform',
-              title: 'Platform',
-              type: 'string',
-              options: { list: SOCIAL_PLATFORMS },
-              validation: (Rule) => Rule.required(),
-            }),
-            linkUrl('url'),
-          ],
-          preview: { select: { title: 'platform', subtitle: 'url' } },
-        }),
-      ],
-    }),
+    linksField('Optional, e.g. personal website or portfolio.'),
+    socialsField,
     defineField({
       name: 'order',
       title: 'Order',

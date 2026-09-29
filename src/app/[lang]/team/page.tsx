@@ -5,7 +5,7 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import CardGrid from '@/components/CardGrid';
-import { getContent, toLocale, type Institution, type TeamMember } from '@/lib/content';
+import { getContent, toLocale, type Institution, type Link, type TeamMember } from '@/lib/content';
 import { croppedImageUrl, imageUrl } from '@/lib/image';
 
 type Props = { params: Promise<{ lang: string }> };
@@ -81,53 +81,47 @@ function MemberCard({ member }: { member: TeamMember }) {
       <h2 className="card-title">{member.name}</h2>
       {member.projectRole && <p className="card-text team-project-role">{member.projectRole}</p>}
       {member.bio && <p className="card-text">{member.bio}</p>}
-      {member.links.length > 0 && (
-        <ul className="card-links">
-          {member.links.map((link) => (
-            <li key={link.key}>
-              <ExternalLink href={link.url}>{link.label}</ExternalLink>
-            </li>
-          ))}
-        </ul>
-      )}
+      <LinkList links={member.links} />
     </>
   );
 }
 
 function InstitutionCard({ institution }: { institution: Institution }) {
-  const { logo, url } = institution;
+  const { logo } = institution;
   return (
     <>
+      {/* Full card width, like the text below it (.institution-logo). */}
       {logo && (
         <Image
-          src={imageUrl(logo)}
+          src={imageUrl(logo, 1200)}
           alt={logo.alt}
           width={logo.width}
           height={logo.height}
-          sizes="16rem"
+          sizes={CARD_IMAGE_SIZES}
           className="institution-logo"
         />
       )}
       <h2 className="card-title">{institution.name}</h2>
       {institution.description && <p className="card-text">{institution.description}</p>}
-      {url && (
-        <ul className="card-links">
-          <li>
-            <ExternalLink href={url}>{displayHost(url)}</ExternalLink>
-          </li>
-        </ul>
-      )}
+      <LinkList links={institution.links} />
     </>
   );
 }
 
-// Links to other sites open in a new tab; noopener stops the new page from
-// accessing this one.
-function ExternalLink({ href, children }: { href: string; children: React.ReactNode }) {
+// Links and social profiles as a row of small links. Links to other sites
+// open in a new tab; noopener stops the new page from accessing this one.
+function LinkList({ links }: { links: Link[] }) {
+  if (links.length === 0) return null;
   return (
-    <a href={href} target="_blank" rel="noopener noreferrer">
-      {children} ↗
-    </a>
+    <ul className="card-links">
+      {links.map((link) => (
+        <li key={link.key}>
+          <a href={link.url} target="_blank" rel="noopener noreferrer">
+            {link.label} ↗
+          </a>
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -138,13 +132,4 @@ function initials(name: string): string {
   const first = parts[0][0];
   const last = parts.length > 1 ? parts[parts.length - 1][0] : '';
   return (first + last).toUpperCase();
-}
-
-// "https://www.residenztheater.de/about" → "residenztheater.de"
-function displayHost(url: string): string {
-  try {
-    return new URL(url).hostname.replace(/^www\./, '');
-  } catch {
-    return url;
-  }
 }

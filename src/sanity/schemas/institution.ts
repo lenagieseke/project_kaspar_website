@@ -1,4 +1,5 @@
 import { defineField, defineType } from 'sanity';
+import { linksField, socialsField } from './links';
 
 // Partner and funding institutions (e.g. Residenztheater, Filmuniversität,
 // Kulturstiftung des Bundes), shown in their own section on the Team page.
@@ -12,16 +13,12 @@ export const institution = defineType({
       name: 'logo',
       title: 'Logo',
       type: 'image',
-      description: 'Optional. Ideally a dark logo on a transparent background (PNG or SVG). Without a logo, the name is shown.',
+      description: 'Optional. Shown above the name at the full width of the card. Ideally a dark logo on a transparent background (PNG or SVG).',
     }),
     defineField({ name: 'description_en', title: 'Description (EN)', type: 'text', rows: 4 }),
     defineField({ name: 'description_de', title: 'Description (DE)', type: 'text', rows: 4 }),
-    defineField({
-      name: 'url',
-      title: 'Website',
-      type: 'url',
-      validation: (Rule) => Rule.uri({ scheme: ['https', 'http'] }),
-    }),
+    linksField('Optional, e.g. website or a project page. The label is the link text on the page.'),
+    socialsField,
     defineField({
       name: 'order',
       title: 'Order',

@@ -1,5 +1,7 @@
 # Integrating Sanity CMS
 
+> **Status:** This integration is complete. The guide is kept as a record of how Sanity was set up, and as a reference for setting up a new Sanity project or dataset.
+
 This guide walks through connecting Sanity as the content backend for the Kaspar 2028 website. It assumes you know Next.js and TypeScript but have never used Sanity before.
 
 ---
@@ -17,7 +19,7 @@ Sanity has three parts you'll interact with:
 | **GROQ API** | The query language your Next.js app uses to fetch content from the Content Lake. |
 
 **How it fits into this project:**  
-All content is currently hardcoded in `src/lib/content.ts`. After this integration, `getContent()` fetches live data from Sanity instead. Every page component stays exactly the same — only the data source changes.
+Before this integration, all content was hardcoded in `src/lib/content.ts`. Now `getContent()` fetches live data from Sanity instead. The page components didn't change — only the data source did.
 
 ---
 
@@ -36,7 +38,7 @@ A **dataset** is like a database environment. Most projects only ever need `prod
 
 ## Step 2: Install Sanity Packages
 
-From inside the `v01/` directory:
+From the project root:
 
 ```bash
 npm install next-sanity sanity styled-components
@@ -54,7 +56,7 @@ The three packages:
 
 ## Step 3: Set Up Environment Variables
 
-Create a `.env.local` file at the root of `v01/`:
+Create a `.env.local` file in the project root:
 
 ```bash
 NEXT_PUBLIC_SANITY_PROJECT_ID=your_project_id_here

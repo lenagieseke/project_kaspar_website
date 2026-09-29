@@ -1,11 +1,9 @@
-// Central content store — placeholder until Sanity is connected.
+// Central content layer — the only place that talks to Sanity.
 //
-// Migration path to Sanity (step 2):
-//   1. Define a Sanity schema that mirrors SiteContent / Section / NewsPost.
-//   2. Replace `getContent()` with a GROQ query (e.g. via next-sanity's
-//      `sanityFetch`). The page components don't need to change because they
-//      only call getContent(locale) and consume the same types.
-//   3. Delete the hardcoded `content` object below.
+// getContent(locale) queries all Sanity documents (schemas in src/sanity/schemas)
+// and maps them to the typed SiteContent shape, picking the `_en` or `_de`
+// field for each value. Page components only call getContent(locale) and never
+// query Sanity directly, so schema changes are absorbed here.
 //
 // Dates are stored as pre-formatted strings (not Date objects) to avoid
 // server/client hydration mismatches when rendering them inside JSX.
@@ -61,13 +59,20 @@ export type SiteContent = {
   news: { posts: NewsPost[] };
 };
 
+// Pages are pre-rendered at build time, then regenerated in the background at
+// most once per REVALIDATE_SECONDS when visited (Incremental Static
+// Regeneration). This is how edits in the Studio reach the live site without
+// a redeploy — expect up to ~1–2 minutes (this + Sanity CDN cache).
+const REVALIDATE_SECONDS = 60;
+const fetchOptions = { next: { revalidate: REVALIDATE_SECONDS } };
+
 export async function getContent(locale: Locale): Promise<SiteContent> {
   // Fetch all three content types in parallel — one round trip each,
   // but they run concurrently so total wait time = the slowest one.
   const [settings, pages, posts] = await Promise.all([
-    client.fetch(`*[_type == "siteSettings"][0]`),
-    client.fetch(`*[_type == "contentPage"]`),
-    client.fetch(`*[_type == "newsPost"] | order(date desc)`),
+    client.fetch(`*[_type == "siteSettings"][0]`, {}, fetchOptions),
+    client.fetch(`*[_type == "contentPage"]`, {}, fetchOptions),
+    client.fetch(`*[_type == "newsPost"] | order(date desc)`, {}, fetchOptions),
   ]);
 
   // Helper: find the document for a given page and map its sections to the

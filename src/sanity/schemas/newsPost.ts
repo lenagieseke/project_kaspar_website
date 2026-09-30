@@ -1,4 +1,22 @@
-import { defineField, defineType } from 'sanity';
+import { defineArrayMember, defineField, defineType } from 'sanity';
+
+// Post body: rich text with images in between (shown at full text width,
+// uncropped). Caption and alt text are per language, as each body is.
+const bodyTypes = [
+  defineArrayMember({ type: 'block' }),
+  defineArrayMember({
+    type: 'image',
+    fields: [
+      defineField({
+        name: 'alt',
+        title: 'Alternative text',
+        type: 'string',
+        description: 'Short description for screen readers.',
+      }),
+      defineField({ name: 'caption', title: 'Caption', type: 'string', description: 'Optional, shown below the image.' }),
+    ],
+  }),
+];
 
 export const newsPost = defineType({
   name: 'newsPost',
@@ -37,8 +55,25 @@ export const newsPost = defineType({
       of: [{ type: 'string' }],
       options: { layout: 'tags' },
     }),
-    defineField({ name: 'body_en', title: 'Body (EN)', type: 'array', of: [{ type: 'block' }] }),
-    defineField({ name: 'body_de', title: 'Body (DE)', type: 'array', of: [{ type: 'block' }] }),
+    defineField({
+      name: 'previewImage',
+      title: 'Preview image',
+      type: 'image',
+      description:
+        'Shown on the News overview in landscape format (3:2). Use "Edit" to set the focal point. ' +
+        'Optional — without one, the card shows a placeholder.',
+      options: { hotspot: true },
+      fields: [
+        defineField({
+          name: 'alt',
+          title: 'Alternative text',
+          type: 'string',
+          description: 'Short description for screen readers. Defaults to the title if empty.',
+        }),
+      ],
+    }),
+    defineField({ name: 'body_en', title: 'Body (EN)', type: 'array', of: bodyTypes }),
+    defineField({ name: 'body_de', title: 'Body (DE)', type: 'array', of: bodyTypes }),
   ],
   orderings: [
     {
@@ -48,6 +83,6 @@ export const newsPost = defineType({
     },
   ],
   preview: {
-    select: { title: 'title_en', subtitle: 'date' },
+    select: { title: 'title_en', subtitle: 'date', media: 'previewImage' },
   },
 });

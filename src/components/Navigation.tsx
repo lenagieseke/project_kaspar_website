@@ -6,11 +6,19 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
-import { locales, navItems, type Locale } from '@/lib/content';
+import { locales, navItems, type Locale, type SubNavItem } from '@/lib/content';
+
+type Props = {
+  lang: Locale;
+  // Section links per nav item href (from subNavItems in lib/content.ts).
+  // On desktop they open as a dropdown on hover/focus; in the hamburger menu
+  // they are listed below their page.
+  subNav: Record<string, SubNavItem[]>;
+};
 
 // Receives the active locale from the server layout so it doesn't need to
 // parse the URL itself — the parent already did that work.
-export default function Navigation({ lang }: { lang: Locale }) {
+export default function Navigation({ lang, subNav }: Props) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
 
@@ -46,13 +54,27 @@ export default function Navigation({ lang }: { lang: Locale }) {
           opacity + pointer-events rather than conditional rendering, so
           transitions work correctly. */}
       <ul className={`nav-list${open ? ' open' : ''}`}>
-        {navItems.map((item) => (
-          <li key={item.href} className={isActive(item.href) ? 'active' : ''}>
-            <Link href={`/${lang}${item.href}`} onClick={() => setOpen(false)}>
-              {item.label[lang]}
-            </Link>
-          </li>
-        ))}
+        {navItems.map((item) => {
+          const sections = subNav[item.href] ?? [];
+          return (
+            <li key={item.href} className={isActive(item.href) ? 'active' : ''}>
+              <Link href={`/${lang}${item.href}`} onClick={() => setOpen(false)}>
+                {item.label[lang]}
+              </Link>
+              {sections.length > 0 && (
+                <ul className="sub-nav">
+                  {sections.map((section) => (
+                    <li key={section.anchor}>
+                      <Link href={`/${lang}${item.href}#${section.anchor}`} onClick={() => setOpen(false)}>
+                        {section.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </li>
+          );
+        })}
 
         {/* Language switcher — links to the same page in the other locale.
             Both links are always rendered so the active one can be bolded via

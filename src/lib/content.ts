@@ -45,7 +45,12 @@ export const navItems: NavItem[] = [
 
 // One heading + one rich-text body on a content page (The Project, K.ai).
 // `key` is Sanity's stable array-item id, used as the React list key.
-export type Section = { key: string; heading: string; body: PortableTextBlock[] };
+// `anchor` is the heading's id on the page (e.g. "about-the-play"), linked
+// from the section submenus in the navigation.
+export type Section = { key: string; heading: string; anchor: string; body: PortableTextBlock[] };
+
+// A section link in a navigation submenu.
+export type SubNavItem = { anchor: string; label: string };
 
 export type NewsPost = {
   slug: string;
@@ -55,8 +60,15 @@ export type NewsPost = {
   date: string;
   category: 'news' | 'article' | 'tutorial';
   tags: string[];
-  body: PortableTextBlock[];
+  previewImage: Image | null;
+  body: RichTextBlock[];
 };
+
+// An image placed between paragraphs of a post body.
+export type BodyImage = { _type: 'image'; _key: string; image: Image; caption: string };
+
+// Post body: text blocks plus images (rendered by components/RichText.tsx).
+export type RichTextBlock = PortableTextBlock | BodyImage;
 
 // A Sanity image with its original pixel size and a tiny blurred preview
 // (LQIP, a base64 data URL) shown while the real image loads.
@@ -115,7 +127,8 @@ type NewsPostDoc = {
   date?: string;
   category?: NewsPost['category'];
   tags?: string[];
-} & Localized<'title', string> & Localized<'body', PortableTextBlock[]>;
+  previewImage?: ImageDoc;
+} & Localized<'title', string> & Localized<'body', (PortableTextBlock | BodyImageDoc)[]>;
 
 // Image fields as returned by the projections in getContent().
 type ImageDoc = SanityImageObject & {
@@ -123,6 +136,8 @@ type ImageDoc = SanityImageObject & {
   lqip?: string;
   dimensions?: { width: number; height: number };
 };
+
+type BodyImageDoc = ImageDoc & { _type: 'image'; _key: string; caption?: string };
 
 // The "Links" and "Social media" lists (src/sanity/schemas/links.ts).
 type LinkFields = {
@@ -169,11 +184,44 @@ function toImage(doc: ImageDoc | undefined, fallbackAlt: string): Image | null {
   return { source, alt: alt || fallbackAlt, width: dimensions.width, height: dimensions.height, lqip };
 }
 
+// Converts the images in a post body to the Image shape; drops image blocks
+// without an uploaded file.
+function toRichText(blocks: (PortableTextBlock | BodyImageDoc)[]): RichTextBlock[] {
+  return blocks.flatMap((b): RichTextBlock[] => {
+    if (b._type !== 'image') return [b as PortableTextBlock];
+    const { _type, _key, caption, ...doc } = b as BodyImageDoc;
+    const image = toImage(doc, caption ?? '');
+    return image ? [{ _type, _key, image, caption: caption ?? '' }] : [];
+  });
+}
+
+// "Über das Stück" → "uber-das-stuck": readable, URL-safe anchor ids.
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/ß/g, 'ss')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // strip accents (ü → u)
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+// Section submenus for the navigation, keyed by nav item href. Sections
+// without a heading have nothing to show, so they are left out.
+export function subNavItems(content: SiteContent): Record<string, SubNavItem[]> {
+  const toItems = (sections: Section[]) =>
+    sections.filter((s) => s.heading).map((s) => ({ anchor: s.anchor, label: s.heading }));
+  return {
+    '/the-project': toItems(content.theProject.sections),
+    '/kai': toItems(content.kai.sections),
+  };
+}
+
 // Extracts plain text from Portable Text, for excerpts. Only looks at text
 // blocks (paragraphs, headings, list items); ignores images and other objects.
-export function portableTextToPlain(blocks: PortableTextBlock[]): string {
+export function portableTextToPlain(blocks: RichTextBlock[]): string {
   return blocks
-    .filter((b) => b._type === 'block' && Array.isArray(b.children))
+    .filter((b): b is PortableTextBlock => b._type === 'block' && 'children' in b && Array.isArray(b.children))
     .map((b) => (b.children as { text?: string }[]).map((c) => c.text ?? '').join(''))
     .join(' ');
 }
@@ -197,7 +245,16 @@ export async function getContent(locale: Locale): Promise<SiteContent> {
   const [settings, pages, posts, members, institutions] = await Promise.all([
     client.fetch<SiteSettingsDoc | null>(`*[_type == "siteSettings"][0]`, {}, fetchOptions),
     client.fetch<ContentPageDoc[]>(`*[_type == "contentPage"]`, {}, fetchOptions),
-    client.fetch<NewsPostDoc[]>(`*[_type == "newsPost"] | order(date desc)`, {}, fetchOptions),
+    client.fetch<NewsPostDoc[]>(
+      `*[_type == "newsPost"] | order(date desc) {
+        ...,
+        previewImage${IMAGE_FIELDS},
+        body_en[]{ ..., _type == "image" => ${IMAGE_FIELDS} },
+        body_de[]{ ..., _type == "image" => ${IMAGE_FIELDS} }
+      }`,
+      {},
+      fetchOptions
+    ),
     client.fetch<TeamMemberDoc[]>(
       `*[_type == "teamMember"] | order(coalesce(order, 9999) asc, name asc) { ..., photo${IMAGE_FIELDS} }`,
       {},
@@ -219,11 +276,16 @@ export async function getContent(locale: Locale): Promise<SiteContent> {
 
   function sectionsFor(pageId: string): Section[] {
     const page = pages.find((p) => p.pageId === pageId);
-    return (page?.sections ?? []).map((s) => ({
-      key: s._key,
-      heading: pick(s, 'heading') ?? '',
-      body: pick(s, 'body') ?? [],
-    }));
+    const used = new Set<string>();
+    return (page?.sections ?? []).map((s) => {
+      const heading: string = pick(s, 'heading') ?? '';
+      // Unique on the page: a repeated heading gets "-2", "-3", …
+      const base = slugify(heading) || s._key;
+      let anchor = base;
+      for (let n = 2; used.has(anchor); n++) anchor = `${base}-${n}`;
+      used.add(anchor);
+      return { key: s._key, heading, anchor, body: pick(s, 'body') ?? [] };
+    });
   }
 
   return {
@@ -263,11 +325,15 @@ export async function getContent(locale: Locale): Promise<SiteContent> {
                 day: 'numeric',
                 month: 'long',
                 year: 'numeric',
+                // The server runs in UTC; without this a post dated shortly
+                // after midnight German time would show the previous day.
+                timeZone: 'Europe/Berlin',
               })
             : '',
           category: p.category ?? 'news',
           tags: p.tags ?? [],
-          body: pick(p, 'body') ?? [],
+          previewImage: toImage(p.previewImage, pick(p, 'title') ?? ''),
+          body: toRichText(pick(p, 'body') ?? []),
         })),
     },
   };

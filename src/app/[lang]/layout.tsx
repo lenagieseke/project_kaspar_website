@@ -15,7 +15,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import BackToTop from '@/components/BackToTop';
 import Navigation from '@/components/Navigation';
-import { isLocale, locales } from '@/lib/content';
+import { getContent, isLocale, locales, subNavItems } from '@/lib/content';
 import '@/styles/globals.css';
 
 export const metadata: Metadata = {
@@ -61,6 +61,8 @@ export default async function LangLayout({ children, params }: Props) {
   // rather than silently rendering English content under a wrong URL.
   if (!isLocale(lang)) notFound();
   const locale = lang;
+  // Section submenus in the navigation. Same (cached) query as the pages use.
+  const subNav = subNavItems(await getContent(locale));
 
   return (
     <html lang={locale} className={`${inter.variable} ${caslon.variable}`}>
@@ -74,7 +76,7 @@ export default async function LangLayout({ children, params }: Props) {
             </div>
             {/* Navigation is a client component — needs useState for the hamburger
                 and usePathname for active-link detection. */}
-            <Navigation lang={locale} />
+            <Navigation lang={locale} subNav={subNav} />
           </nav>
         </header>
 

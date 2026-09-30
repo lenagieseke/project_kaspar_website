@@ -41,9 +41,11 @@ src/
 ├── components/
 │   ├── Teaser.tsx              # falling-text physics animation (client component)
 │   ├── ContentPage.tsx         # shared layout for The Project, K.ai
+│   ├── RichText.tsx            # news post body: rich text with images
+│   ├── TagList.tsx             # a news post's tags
 │   ├── CardGrid.tsx            # staggered 3-column card grid (News, Team)
 │   ├── BackToTop.tsx           # back-to-top arrow
-│   └── Navigation.tsx          # nav links, active state, mobile hamburger
+│   └── Navigation.tsx          # nav links, section submenus, active state, mobile hamburger
 ├── lib/
 │   ├── content.ts              # getContent(), types, locale helpers, navItems
 │   ├── image.ts                # Sanity image URLs (crop/hotspot) for next/image

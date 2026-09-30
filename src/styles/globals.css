@@ -21,6 +21,18 @@
 
 /* ---- Global Styles ---- */
 
+/* Height of the fixed header. Page titles, the home page and the section
+ * jump offset use it to stay clear of the header. */
+:root {
+  --header-height: 76px;
+}
+
+@media (max-width: 768px) {
+  :root {
+    --header-height: 60px;
+  }
+}
+
 body {
   font-family: var(--font-body), sans-serif;
   margin: 0;
@@ -51,13 +63,12 @@ a {
   width: 100%;
   position: fixed;
   z-index: 1000;
-  background: linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,255,255,0) 100%);
+  background: #fff;
 }
 
 .site-header .logo a {
   font-size: 1.5rem;
   font-weight: bold;
-  text-decoration: none;
   color: #000;
 }
 
@@ -70,7 +81,7 @@ a {
   margin: 0 auto;
   display: grid;
   grid-template-columns: repeat(10, 1fr);
-  height: 100px;
+  height: var(--header-height);
   align-items: center;
 }
 
@@ -93,7 +104,6 @@ a {
 }
 
 .nav-list a {
-  text-decoration: none;
   color: #000;
   font-weight: 500;
   transition: color 0.2s;
@@ -115,21 +125,78 @@ a {
 }
 
 .lang-switcher .lang-link.lang-active {
-  color: #000;
   font-weight: 900;
 }
 
+/* "> a": only the page link itself, not its submenu links. */
 .nav-list a:hover,
-.nav-list li.active a {
+.nav-list li.active > a {
   color: #ccc;
+}
+
+/* Section submenu (Navigation.tsx): a dropdown below the page link, shown on
+ * hover or keyboard focus. padding-top bridges the gap to the link, so the
+ * menu stays open while the pointer moves down into it. */
+.nav-list > li {
+  position: relative;
+}
+
+.sub-nav {
+  position: absolute;
+  top: 100%;
+  /* Shifted by the items' side padding, so the link text lines up on the
+   * right with the page link above; the white background extends past it. */
+  right: -0.75rem;
+  list-style: none;
+  margin: 0;
+  padding: 0.25rem 0 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Desktop only (the hamburger menu lists the links, see Responsive).
+ * - Fades in, but closes instantly, so two dropdowns never overlap while the
+ *   pointer moves from one item to the next.
+ * - :focus-visible (not :focus-within): opens for keyboard users, but a mouse
+ *   click doesn't leave the dropdown stuck open through the link's focus.
+ * - While the pointer is over one item, every other dropdown stays closed,
+ *   even one opened by keyboard focus. */
+@media (min-width: 1025px) {
+  .nav-list > li:hover > .sub-nav,
+  .nav-list > li:has(:focus-visible) > .sub-nav {
+    opacity: 1;
+    pointer-events: auto;
+    transition: opacity 0.2s;
+  }
+
+  .nav-list:hover > li:not(:hover) > .sub-nav {
+    opacity: 0;
+    pointer-events: none;
+    transition: none;
+  }
+}
+
+.sub-nav li {
+  background: #fff;
+  padding: 0.2rem 0.75rem;
+  white-space: nowrap;
+}
+
+.sub-nav li:first-child { padding-top: 0.25rem; }
+.sub-nav li:last-child  { padding-bottom: 0.5rem; }
+
+.nav-list .sub-nav a {
+  font-size: 0.85rem;
+  font-weight: 300;
 }
 
 /* ---- Page title (non-home pages) ---- */
 
 .page-title-header {
   width: 100%;
-  padding-top: 100px;
+  padding-top: var(--header-height);
   padding-right: 10%;
+  padding-bottom: 2rem;
   box-sizing: border-box;
   text-align: right;
 }
@@ -166,7 +233,6 @@ body {
   max-width: 1440px;
   margin: 0 auto;
   width: 100%;
-  padding-top: 0;
   display: grid;
   grid-template-columns: repeat(10, 1fr);
 }
@@ -180,7 +246,7 @@ body {
 #main-content.home-content {
   position: relative;
   z-index: 1;
-  padding-top: 100px; /* height of the fixed header */
+  padding-top: var(--header-height);
   align-content: end;
   pointer-events: none;
 }
@@ -226,6 +292,12 @@ body {
 
 .project-wrapper > h1:nth-of-type(2n) {
   text-align: right;
+}
+
+/* Section links in the nav submenu jump here; keep the heading clear of the
+ * fixed header. */
+.project-wrapper > h1[id] {
+  scroll-margin-top: calc(var(--header-height) + 20px);
 }
 
 /* Direct <p> children (home page description) */
@@ -277,6 +349,18 @@ body {
 .portable-text h2 { font-size: clamp(1.5rem, 3vw, 2.75rem); }
 .portable-text h3 { font-size: clamp(1.25rem, 2vw, 1.75rem); }
 .portable-text > :first-child { margin-top: 0; }
+
+/* Images in a post body (components/RichText.tsx): full text width, uncropped. */
+.portable-text figure   { margin: 2em 0; }
+.portable-text figure img {
+  width: 100%;
+  height: auto;
+}
+.portable-text figcaption {
+  font-size: 0.85rem;
+  color: #555;
+  margin-top: 0.5em;
+}
 
 /* ---- Home page teaser ---- */
 
@@ -371,6 +455,47 @@ body {
 
 .news-card-link:hover .card-title {
   color: #ccc;
+}
+
+/* Tags (TagList.tsx): small outlined labels in a wrapping row. */
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+}
+
+.tag-list li {
+  font-size: 0.75rem;
+  line-height: 1.4;
+  color: #555;
+  border: 1px solid #ccc;
+  border-radius: 999px;
+  padding: 0.1rem 0.6rem;
+}
+
+/* Preview image on the News overview (PreviewImage in news/page.tsx). */
+.news-preview {
+  width: 100%;
+  height: auto;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+  margin-bottom: 1rem;
+  background: #f2f2f2; /* visible while the image loads */
+}
+
+/* Shown instead of the preview image while none is uploaded; styled like
+ * .team-photo-placeholder. Takes its size from .news-preview. */
+.news-preview-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display), serif;
+  font-size: clamp(2rem, 4vw, 3.5rem);
+  text-transform: capitalize;
+  color: #bbb;
 }
 
 /* ---- Team page ---- */
@@ -590,23 +715,27 @@ body {
 
 /* ---- Responsive ---- */
 
-@media (max-width: 768px) {
+/* Tablets and phones: hamburger menu. The inline menu wraps its item names
+ * onto two lines below this width. */
+@media (max-width: 1024px) {
   .main-navigation {
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 0 1.5rem;
     max-width: 100%;
-    height: 70px;
   }
 
   .nav-toggle {
     display: flex;
   }
 
+  /* Opens just below the hamburger button. visibility (not only opacity)
+   * keeps the closed menu's links out of keyboard and screen reader reach;
+   * the transition delays hiding until the fade-out has finished. */
   .nav-list {
     position: fixed;
-    top: 56px;
+    top: calc(var(--header-height) - 14px);
     right: 1.5rem;
     background: #fff;
     flex-direction: column;
@@ -616,20 +745,43 @@ body {
     padding: 1rem 1.5rem;
     font-size: 1rem;
     opacity: 0;
+    visibility: hidden;
     pointer-events: none;
-    transition: opacity 0.2s;
+    transition: opacity 0.2s, visibility 0.2s;
     z-index: 1000;
     grid-column: unset;
   }
 
   .nav-list.open {
     opacity: 1;
+    visibility: visible;
     pointer-events: auto;
   }
 
+  /* In the hamburger menu the section links are always listed below their
+   * page (no hover on touch screens). They follow the menu's own visibility. */
+  .sub-nav {
+    position: static;
+    opacity: 1;
+    pointer-events: inherit;
+    padding: 0.1rem 0 0;
+    text-align: right;
+  }
+
+  .sub-nav li,
+  .sub-nav li:first-child,
+  .sub-nav li:last-child {
+    padding: 0.1rem 0;
+  }
+
+  .nav-list .sub-nav a {
+    color: #666;
+  }
+}
+
+@media (max-width: 768px) {
   .page-title-header,
   #main-content > .privacy-title-header {
-    padding-top: 70px;
     padding-right: 1.5rem;
   }
 

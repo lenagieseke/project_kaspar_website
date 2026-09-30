@@ -15,43 +15,84 @@ type ImprintSection = { heading: string; body: React.ReactNode };
 const TITLE = { en: 'Imprint', de: 'Impressum' };
 const PRIVACY_TITLE = { en: 'Privacy Policy', de: 'Datenschutzerklärung' };
 
+// The two institutions responsible for the website, shown under both
+// "Legal Disclosure" and "Responsible for Content".
+const INSTITUTIONS = [
+  { name: 'Filmuniversität Babelsberg KONRAD WOLF', street: 'Marlene-Dietrich-Allee 11', city: '14482 Potsdam' },
+  { name: 'Residenztheater München', street: 'Max-Joseph-Platz 1', city: '80539 München' },
+];
 
-function Address({ country }: { country: string }) {
+function Addresses({ country }: { country: string }) {
   return (
-    <p>
-      Prof. Dr. Lena Gieseke
-      <br />
-      Marlene-Dietrich-Allee 11
-      <br />
-      14482 Potsdam
-      <br />
-      {country}
-    </p>
+    <>
+      {INSTITUTIONS.map((institution) => (
+        <p key={institution.name}>
+          {institution.name}
+          <br />
+          {institution.street}
+          <br />
+          {institution.city}
+          <br />
+          {country}
+        </p>
+      ))}
+    </>
   );
 }
 
-// The email address is shown as an image (not text or a mailto link) so spam
-// bots can't harvest it. The alt text spells it out for screen readers.
-// Displayed at half the 300×40 source size, so it stays sharp on high-resolution screens.
-const email = (
-  <Image
-    src="/email_01.png"
-    alt="hello at lenagieseke dot com"
-    width={150}
-    height={20}
-    className="impressum-email"
-  />
-);
+// Contact people. Each email address is shown as an image (not text or a
+// mailto link) so spam bots can't harvest it; the alt text spells it out for
+// screen readers. `width` × `height` is the display size and must have the
+// same proportions as the image file, or it is shown stretched. Export the
+// image at least twice that size, so it stays sharp on high-resolution
+// screens. `name` is optional. To add a second person, put their email image
+// in public/ and add an entry like the one below.
+type Contact = { name?: string; image: string; width: number; height: number; alt: string };
 
-// Vercel hosts the site and is the only third party that receives visitors'
-// data (server logs). Update this if the hosting changes.
+const CONTACTS: Contact[] = [
+  {
+    name: 'Prof. Dr. Lena Gieseke',
+    image: '/email_gieseke_01.png', // 2179×265
+    width: 210,
+    height: 26,
+    alt: 'l.gieseke at filmuni dot de',
+  },
+];
+
+function Contacts() {
+  return (
+    <>
+      {CONTACTS.map((contact) => (
+        <p key={contact.image}>
+          {contact.name && (
+            <>
+              {contact.name}
+              <br />
+            </>
+          )}
+          <Image
+            src={contact.image}
+            alt={contact.alt}
+            width={contact.width}
+            height={contact.height}
+            className="impressum-email"
+          />
+        </p>
+      ))}
+    </>
+  );
+}
+
+// Render hosts the site and is the only third party that receives visitors'
+// data (server logs). Update this, and the transfer note in "Hosting" below,
+// if the hosting changes.
 const HOST = (
   <p>
-    Vercel Inc.
+    Render Services, Inc.
     <br />
-    440 N Barranca Ave #4133
+    525 Brannan Street, Suite 300
     <br />
-    Covina, CA 91723, USA
+    San Francisco, CA 94107, USA
   </p>
 );
 
@@ -68,11 +109,11 @@ const AUTHORITY = (
 
 const IMPRINT_SECTIONS: Record<Locale, ImprintSection[]> = {
   en: [
-    { heading: 'Legal Disclosure', body: <Address country="Germany" /> },
-    { heading: 'Contact', body: <p>{email}</p> },
+    { heading: 'Legal Disclosure', body: <Addresses country="Germany" /> },
+    { heading: 'Contact', body: <Contacts /> },
     {
       heading: 'Responsible for Content (§ 18 (2) MStV)',
-      body: <Address country="Germany" />,
+      body: <Addresses country="Germany" />,
     },
     {
       heading: 'Disclaimer',
@@ -94,11 +135,11 @@ const IMPRINT_SECTIONS: Record<Locale, ImprintSection[]> = {
     },
   ],
   de: [
-    { heading: 'Angaben gemäß § 5 DDG', body: <Address country="Deutschland" /> },
-    { heading: 'Kontakt', body: <p>{email}</p> },
+    { heading: 'Angaben gemäß § 5 DDG', body: <Addresses country="Deutschland" /> },
+    { heading: 'Kontakt', body: <Contacts /> },
     {
       heading: 'Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV',
-      body: <Address country="Deutschland" />,
+      body: <Addresses country="Deutschland" />,
     },
     {
       heading: 'Haftungsausschluss',
@@ -128,8 +169,9 @@ const PRIVACY_SECTIONS: Record<Locale, ImprintSection[]> = {
       body: (
         <>
           <p>
-            The controller responsible for data processing on this website is the person named
-            above under Legal Disclosure, reachable at the email address given under Contact.
+            The controllers responsible for data processing on this website are the institutions
+            named above under Legal Disclosure, reachable at the email addresses given under
+            Contact.
           </p>
         </>
       ),
@@ -160,9 +202,9 @@ const PRIVACY_SECTIONS: Record<Locale, ImprintSection[]> = {
             requested, the referring page, and your browser and operating system. This data is
             needed to deliver the website and to keep it secure and stable, and is deleted once
             it is no longer required for these purposes. Legal basis: Art. 6 (1) (f) GDPR (our
-            legitimate interest in the secure, reliable operation of the website). Vercel may
-            process data in the USA; Vercel is certified under the EU-US Data Privacy Framework,
-            for which the European Commission has issued an adequacy decision (Art. 45 GDPR).
+            legitimate interest in the secure, reliable operation of the website). Render is based
+            in the USA and may process data there; the transfer is safeguarded by the EU Standard
+            Contractual Clauses in Render&apos;s data processing agreement (Art. 46 (2) (c) GDPR).
           </p>
         </>
       ),
@@ -200,7 +242,7 @@ const PRIVACY_SECTIONS: Record<Locale, ImprintSection[]> = {
             You have the right to access your personal data (Art. 15 GDPR), to have it corrected
             (Art. 16) or deleted (Art. 17), to restrict its processing (Art. 18), to data
             portability (Art. 20), and to object to processing based on Art. 6 (1) (f) (Art. 21).
-            To exercise these rights, contact us at the email address above. You also have the
+            To exercise these rights, contact us at one of the email addresses above. You also have the
             right to lodge a complaint with a data protection supervisory authority (Art. 77
             GDPR). The authority responsible for us is:
           </p>
@@ -215,9 +257,9 @@ const PRIVACY_SECTIONS: Record<Locale, ImprintSection[]> = {
       body: (
         <>
           <p>
-            Verantwortlich für die Datenverarbeitung auf dieser Website ist die oben unter
-            „Angaben gemäß § 5 DDG“ genannte Person, erreichbar über die unter „Kontakt“
-            angegebene E-Mail-Adresse.
+            Verantwortlich für die Datenverarbeitung auf dieser Website sind die oben unter
+            „Angaben gemäß § 5 DDG“ genannten Institutionen, erreichbar über die unter „Kontakt“
+            angegebenen E-Mail-Adressen.
           </p>
         </>
       ),
@@ -249,10 +291,10 @@ const PRIVACY_SECTIONS: Record<Locale, ImprintSection[]> = {
             Daten sind nötig, um die Website auszuliefern und ihren sicheren, stabilen Betrieb
             zu gewährleisten, und werden gelöscht, sobald sie dafür nicht mehr erforderlich
             sind. Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO (unser berechtigtes Interesse
-            am sicheren und zuverlässigen Betrieb der Website). Vercel verarbeitet Daten
-            gegebenenfalls in den USA; Vercel ist nach dem EU-US Data Privacy Framework
-            zertifiziert, für das ein Angemessenheitsbeschluss der EU-Kommission vorliegt
-            (Art. 45 DSGVO).
+            am sicheren und zuverlässigen Betrieb der Website). Render hat seinen Sitz in den USA
+            und verarbeitet Daten gegebenenfalls dort; die Übermittlung ist durch die
+            EU-Standardvertragsklauseln im Auftragsverarbeitungsvertrag von Render abgesichert
+            (Art. 46 Abs. 2 lit. c DSGVO).
           </p>
         </>
       ),
@@ -291,8 +333,8 @@ const PRIVACY_SECTIONS: Record<Locale, ImprintSection[]> = {
             Sie haben das Recht auf Auskunft über Ihre personenbezogenen Daten (Art. 15 DSGVO),
             auf Berichtigung (Art. 16), Löschung (Art. 17), Einschränkung der Verarbeitung
             (Art. 18), Datenübertragbarkeit (Art. 20) sowie auf Widerspruch gegen eine
-            Verarbeitung nach Art. 6 Abs. 1 lit. f DSGVO (Art. 21). Wenden Sie sich dazu an die
-            oben angegebene E-Mail-Adresse. Außerdem haben Sie das Recht, sich bei einer
+            Verarbeitung nach Art. 6 Abs. 1 lit. f DSGVO (Art. 21). Wenden Sie sich dazu an eine
+            der oben angegebenen E-Mail-Adressen. Außerdem haben Sie das Recht, sich bei einer
             Datenschutz-Aufsichtsbehörde zu beschweren (Art. 77 DSGVO). Für uns zuständig ist:
           </p>
           {AUTHORITY}

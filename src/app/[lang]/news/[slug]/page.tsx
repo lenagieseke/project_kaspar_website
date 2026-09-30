@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { PortableText } from '@portabletext/react';
+import RichText from '@/components/RichText';
+import TagList from '@/components/TagList';
 import { getContent, locales, toLocale } from '@/lib/content';
 
 type Props = { params: Promise<{ lang: string; slug: string }> };
@@ -40,9 +41,12 @@ export default async function NewsArticle({ params }: Props) {
       </div>
       <main id="main-content">
         <article className="article-body">
-          <span className="date">{post.date}</span>
+          <div>
+            <span className="date">{post.date}</span>
+            <TagList tags={post.tags} />
+          </div>
           <div className="portable-text">
-            <PortableText value={post.body} />
+            <RichText value={post.body} />
           </div>
         </article>
       </main>

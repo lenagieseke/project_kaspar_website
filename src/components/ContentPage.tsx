@@ -18,7 +18,8 @@ export default function ContentPage({ title, sections }: Props) {
         <div className="project-wrapper">
           {sections.map((section) => (
             <Fragment key={section.key}>
-              <h1>{section.heading}</h1>
+              {/* id: target of the section links in the navigation submenu */}
+              <h1 id={section.anchor}>{section.heading}</h1>
               <div className="portable-text">
                 <PortableText value={section.body} />
               </div>
